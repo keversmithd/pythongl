@@ -7,46 +7,46 @@ def glDebugOutput(source, type, id, severity, length, message, userParam):
 
     print("---------------")
     print(f"Debug message ({id}): {message}")
-
-    if source == gl.GL_DEBUG_SOURCE_API:
+    
+    if source == GL_DEBUG_SOURCE_API:
         print("Source: API")
-    elif source == gl.GL_DEBUG_SOURCE_WINDOW_SYSTEM:
+    elif source == GL_DEBUG_SOURCE_WINDOW_SYSTEM:
         print("Source: Window System")
-    elif source == gl.GL_DEBUG_SOURCE_SHADER_COMPILER:
+    elif source == GL_DEBUG_SOURCE_SHADER_COMPILER:
         print("Source: Shader Compiler")
-    elif source == gl.GL_DEBUG_SOURCE_THIRD_PARTY:
+    elif source == GL_DEBUG_SOURCE_THIRD_PARTY:
         print("Source: Third Party")
-    elif source == gl.GL_DEBUG_SOURCE_APPLICATION:
+    elif source == GL_DEBUG_SOURCE_APPLICATION:
         print("Source: Application")
-    elif source == gl.GL_DEBUG_SOURCE_OTHER:
+    elif source == GL_DEBUG_SOURCE_OTHER:
         print("Source: Other")
 
-    if type == gl.GL_DEBUG_TYPE_ERROR:
+    if type == GL_DEBUG_TYPE_ERROR:
         print("Type: Error")
-    elif type == gl.GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+    elif type == GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
         print("Type: Deprecated Behavior")
-    elif type == gl.GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+    elif type == GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
         print("Type: Undefined Behavior")
-    elif type == gl.GL_DEBUG_TYPE_PORTABILITY:
+    elif type == GL_DEBUG_TYPE_PORTABILITY:
         print("Type: Portability")
-    elif type == gl.GL_DEBUG_TYPE_PERFORMANCE:
+    elif type == GL_DEBUG_TYPE_PERFORMANCE:
         print("Type: Performance")
-    elif type == gl.GL_DEBUG_TYPE_MARKER:
+    elif type == GL_DEBUG_TYPE_MARKER:
         print("Type: Marker")
-    elif type == gl.GL_DEBUG_TYPE_PUSH_GROUP:
+    elif type == GL_DEBUG_TYPE_PUSH_GROUP:
         print("Type: Push Group")
-    elif type == gl.GL_DEBUG_TYPE_POP_GROUP:
+    elif type == GL_DEBUG_TYPE_POP_GROUP:
         print("Type: Pop Group")
-    elif type == gl.GL_DEBUG_TYPE_OTHER:
+    elif type == GL_DEBUG_TYPE_OTHER:
         print("Type: Other")
 
-    if severity == gl.GL_DEBUG_SEVERITY_HIGH:
+    if severity == GL_DEBUG_SEVERITY_HIGH:
         print("Severity: High")
-    elif severity == gl.GL_DEBUG_SEVERITY_MEDIUM:
+    elif severity == GL_DEBUG_SEVERITY_MEDIUM:
         print("Severity: Medium")
-    elif severity == gl.GL_DEBUG_SEVERITY_LOW:
+    elif severity == GL_DEBUG_SEVERITY_LOW:
         print("Severity: Low")
-    elif severity == gl.GL_DEBUG_SEVERITY_NOTIFICATION:
+    elif severity == GL_DEBUG_SEVERITY_NOTIFICATION:
         print("Severity: Notification")
 
     print()
@@ -68,7 +68,6 @@ def initWindow():
         glfw.terminate()
         return
     
-
     # Make the window's OpenGL context current
     glfw.make_context_current(window)
     glfw.swap_interval(1)
@@ -80,7 +79,7 @@ def initWindow():
             glEnable(GL_DEBUG_OUTPUT)
             glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS)
             glDebugMessageCallback(glDebugOutput, None)
-            glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, none, GL_TRUE)
+            glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, None, GL_TRUE)
 
 
     return window
