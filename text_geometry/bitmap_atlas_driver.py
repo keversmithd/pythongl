@@ -11,6 +11,8 @@ from bitmap_atlas import *
 from state.state import *
 from bitmap_text import *
 from text_display_box import *
+from layout_element import *
+
 
 def mouse_call(window, x,y):
     scene = glfw.get_window_user_pointer(window)
@@ -26,6 +28,15 @@ def key_call(window, key, scancode, action, mods):
         glfw.set_window_should_close(window, True)
     return
 
+def mouse_button_call(window, button, action, mods):
+    scene = glfw.get_window_user_pointer(window)
+    
+    if(action == glfw.PRESS):
+        if(button == glfw.MOUSE_BUTTON_LEFT):
+            scene.on_left_click(button, action, mods)
+    
+    return
+
 def window_setup(window, state):
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
@@ -35,6 +46,7 @@ def window_setup(window, state):
 
     glfw.set_cursor_pos_callback(window, mouse_call)
     glfw.set_key_callback(window, key_call)
+    glfw.set_mouse_button_callback(window, mouse_button_call)
 
     return
 
@@ -56,15 +68,22 @@ def main():
     #text_maker = bitmap_text(scene)
     #text_maker.render_text("hellog", "joanRegular")
 
-    tracked_value = ["track me"]
+    tracked_value = ["track mgggml"]
     tracked_text_display = text_display(scene, "joanRegular")
 
     tracked_text_display.set_tracked_value(tracked_value)
-    tracked_text_display.set_location(np.array([-0.5,0], dtype=np.float32))
-    tracked_text_display.set_container( [ np.array([0,0.0], dtype=np.float32), np.array([0.5,0.5], dtype=np.float32) ] )
+    tracked_text_display.set_location(np.array([-1.0,0.0], dtype=np.float32))
+    tracked_text_display.set_container( [ np.array([0,0.0], dtype=np.float32), np.array([1,1], dtype=np.float32) ] )
     tracked_text_display.set_size(3)
 
     tracked_text_display.generate_mesh()
+
+
+    simple_element = layout_element(scene)
+
+    child_element = layout_element(scene)
+    child_element.link_to_parent(simple_element, [0.0, 0.0, 0.5,0.5])
+
 
     glClearColor(1.0, 1.0, 0.0, 1.0)
 
@@ -78,6 +97,8 @@ def main():
 
         # Render your OpenGL scene here
         tracked_text_display.draw()
+        #simple_element.draw()
+        #child_element.draw()
 
         if(glfw.get_key(window, glfw.KEY_V) == glfw.PRESS):
             tracked_value[0] = "track" + random.choice(["me", "you", "us", "them"])

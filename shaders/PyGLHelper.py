@@ -3,6 +3,7 @@ from OpenGL.GL import *
 from OpenGL.GL.shaders import compileShader, compileProgram
 import os
 import ctypes
+import numpy as np
 
 #window
 def glDebugOutput(source, type, id, severity, length, message, userParam):
@@ -58,7 +59,6 @@ def glDebugOutput(source, type, id, severity, length, message, userParam):
 
     raise Exception("Bad")
 
-
 def initWindow(height, width, DebugOutput, name, window_setup, state):
     if not glfw.init():
         return
@@ -91,7 +91,6 @@ def initWindow(height, width, DebugOutput, name, window_setup, state):
     window_setup(window, state)
     
     return window
-
 
 def CreateProgram(shader_sources, shader_types):
     # Compile shaders and create program
@@ -140,6 +139,13 @@ def glSetVec4(program, name, value):
     
     glUniform4fv(location, 1, value)
 
+def glSetVec2(program, name, value):
+    location = glGetUniformLocation(program, name)
+    if(location == -1):
+        raise RuntimeError("Uniform not found")
+    
+    glUniform2fv(location, 1, value)
+
 def glSetFloat(program, name, value):
     location = glGetUniformLocation(program, name)
     if(location == -1):
@@ -147,9 +153,15 @@ def glSetFloat(program, name, value):
     
     glUniform1f(location, value)
 
+def glSetBlock(program, name, value):
+    location = glGetUniformBlockIndex(program, name)
+    if(location == -1):
+        raise RuntimeError("Uniform not found")
+    glUniformBlockBinding(program, location, value)
+
 # meshes
     
-class basic_element_mesh:
+class simple_element_mesh:
 
     def __init__(self):
 
@@ -189,5 +201,66 @@ class basic_element_mesh:
     def bind_for_draw(self):
         glBindVertexArray(self.vertex_array)
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.element_buffer)
+
+        return
+
+class simple_element_geometry:
+
+    def __init__(self):
+
+        self.vertex_data = np.array([], dtype=np.float32)
+        self.element_data = np.array([], dtype=np.uint32)
+
+        self.vertex_index = 0
+        self.element_index = 0
+        self.current_element = 0
+
+        return
+    
+    def resize_arrays(self, n, relations):
+        
+        self.vertex_data.resize(n*relations[0], refcheck=False)
+        self.element_data.resize(n*relations[1], refcheck=False)
+        return
+    
+    def reset_indexes(self):
+        self.vertex_index = 0
+        self.element_index = 0
+        self.current_element = 0
+        return
+    
+    def append_vec4(self, x,y,z,w):
+
+        self.vertex_data[self.vertex_index] = x
+        self.vertex_data[self.vertex_index+1] = y
+        self.vertex_data[self.vertex_index+2] = z
+        self.vertex_data[self.vertex_index+3] = w
+
+        self.vertex_index += 4
+
+        return
+    
+    def append_element_tri(self, a,b,c):
+
+        self.element_data[self.element_index] = self.current_element+a
+        self.element_data[self.element_index+1] = self.current_element+b
+        self.element_data[self.element_index+2] = self.current_element+c
+
+        self.element_index += 3
+        self.current_element += 3
+
+        return
+    
+    def append_element_quad(self, a,b,c,d):
+        self.element_data[self.element_index] = self.current_element+a
+        self.element_data[self.element_index+1] = self.current_element+b
+        self.element_data[self.element_index+2] = self.current_element+c
+
+        self.element_data[self.element_index+3] = self.current_element+a
+        self.element_data[self.element_index+4] = self.current_element+d
+        self.element_data[self.element_index+5] = self.current_element+c
+
+        self.element_index += 6
+        self.current_element += 4
 
         return
