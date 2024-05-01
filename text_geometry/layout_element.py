@@ -2,6 +2,7 @@ import numpy as np
 import os
 import sys
 
+# append workspace directory to the system path for file usage.
 workspace_directory = os.path.dirname(os.path.realpath(__file__))
 workspace_directory = workspace_directory.rsplit('\\', 1)[0]
 sys.path.append(workspace_directory)
@@ -15,7 +16,7 @@ class layout_element_style(ctypes.Structure):
                 ("relation", ctypes.c_int * 4),
                 ("color", ctypes.c_float * 4)]
     
-    def __init__( self, container=(0.5,0.5,1.0,1.0), parent_container=(-0.5,-0.5,0.5,0.5), relation=(0,0,0,0) ):
+    def __init__( self, container=(0.5,0.5,1,1), parent_container=(-1,-1,1,1), relation=(0,0,0,0), color=(1,0,0,1) ):
         self.container[0] = container[0]
         self.container[1] = container[1]
         self.container[2] = container[2]
@@ -31,6 +32,11 @@ class layout_element_style(ctypes.Structure):
         self.relation[2] = relation[2]
         self.relation[3] = relation[3]
 
+        self.color[0] = color[0]
+        self.color[1] = color[1]
+        self.color[2] = color[2]
+        self.color[3] = color[3]
+
     def set_container(self, container):
         self.container[0] = container[0]
         self.container[1] = container[1]
@@ -45,44 +51,40 @@ class layout_element_style(ctypes.Structure):
         self.parent_container[3] = container[3]
         return
 
+    def set_color(self, color):
+
+        self.color[0] = color[0]
+        self.color[1] = color[1]
+        self.color[2] = color[2]
+        self.color[3] = color[3]
+        return
+
     def get_container(self):
 
-        parent_space_container = np.array([self.parent_container[0],self.parent_container[1],self.parent_container[2],self.parent_container[3]], dtype=np.float32)
-        local_space_container = np.array([self.container[0],self.container[1],self.container[2],self.container[3]], dtype=np.float32)
+        container = [0,0,0,0]
+        #get two axis system
+        a1 = np.array([self.parent_container[2] - self.parent_container[0], 0], dtype=float)
+        a2 = np.array([0, self.parent_container[3] - self.parent_container[1]], dtype=float)
 
-        if( self.relation[0] == 0 ):
-            parent_space_container[0] = self.parent_container[0]-1
-            parent_space_container[1] = self.parent_container[1]-1
-            parent_space_container[2] = self.parent_container[2]
-            parent_space_container[3] = self.parent_container[3]
-            
-        if( self.relation[0] == 1 ):
-            parent_space_container[0] = self.parent_container[0]
-            parent_space_container[1] = self.parent_container[1]
-            parent_space_container[2] = self.parent_container[2]
-            parent_space_container[3] = self.parent_container[3]
+        if(self.relation[0] == 0):
+            container[0] = self.parent_container[0] + a1[0]*self.container[0]
+            container[1] = self.parent_container[1] + a2[1]*self.container[1]
+            container[2] = self.parent_container[0] + a1[0]*self.container[2]
+            container[3] = self.parent_container[1] + a2[1]*self.container[3]
+        if(self.relation[1] == 1):
+            container[0] = (self.parent_container[0]+(a1[0]/2)) + (a1[0]/2)*self.container[0]
+            container[1] = (self.parent_container[1] + (a2[1]/2)) + (a2[1]/2)*self.container[1]
+            container[2] = (self.parent_container[0]+(a1[0]/2)) + (a1[0]/2)*self.container[2]
+            container[3] = (self.parent_container[1] + a2[1]/2) + (a2[1]/2)*self.container[3]
 
-        Px = np.array([parent_space_container[2], parent_space_container[1]]) - np.array([parent_space_container[0], parent_space_container[1]])
-        Py = np.array([parent_space_container[0], parent_space_container[3]]) - np.array([parent_space_container[0], parent_space_container[1]])
-        Pxl = np.linalg.norm(Px)
-        Pyl = np.linalg.norm(Py)
 
-        Lx = np.array([local_space_container[2], local_space_container[1]]) - np.array([local_space_container[0], local_space_container[1]])
-        Ly = np.array([local_space_container[0], local_space_container[3]]) - np.array([local_space_container[0], local_space_container[1]])
-        Lxl = np.linalg.norm(Lx)
-        Lyl = np.linalg.norm(Ly)
-
-        if( local_space_container[2] < 0 ):
-            Lxl = Lxl * -1
-        
-        if( local_space_container[3] < 0 ):
-            Lyl = Lyl * -1
-
-        
-
-        return [parent_space_container[0] + local_space_container[0]*Pxl, parent_space_container[1] + local_space_container[1]*Pyl,
-        parent_space_container[0] + local_space_container[2]*Pxl, parent_space_container[1] + local_space_container[3]*Pyl]
-        
+        return container
+    
+    def set_relation(self, relation):
+        self.relation[0] = relation
+        self.relation[1] = relation
+        self.relation[2] = relation
+        self.relation[3] = relation
 
     def translate_container(self, translation):
         self.container[0] = self.container[0] + translation[0]
@@ -91,9 +93,6 @@ class layout_element_style(ctypes.Structure):
         self.container[3] = self.container[3] + translation[1]
         return
         
-        
-
-
     def set_parent_container(self, container):
         self.parent_container[0] = container[0]
         self.parent_container[1] = container[1]
@@ -104,23 +103,34 @@ class layout_element_style(ctypes.Structure):
 class layout_element:
     def __init__(self, state, parent=None):
 
+        # gl objects
         self.element_mesh = simple_element_mesh()
+        # vertex space
         self.element_geometry = simple_element_geometry()
 
+        #connects to state
         self.state = state
+
         self.program = None
 
+        # links the event object up.
         self.state.event_objects.append(self)
 
         self.parent = parent
 
-        self.style = layout_element_style()
+        # if the parent exsits lets use it
+        if(parent != None):
+            self.style = layout_element_style((0.0,0.0,0.5,0.5), parent.style.get_container(), (0,0,0,0), (1,0,0,1))
+        else:
+            self.style = layout_element_style()
 
         self.previous_local_mouse = None
         self.was_dragged = False
 
         self.update_program()
+        # creates program and links the shader material
         self.make_uniform()
+        # creates the uniform and sets the style information.
         self.generate_geometry()
         self.element_mesh.init_buffers(self.element_geometry.vertex_data, self.element_geometry.element_data, [(4, GL_FLOAT)], 4*4)
 
@@ -145,12 +155,44 @@ class layout_element:
             vec4 container;\n
             vec4 parent_container;\n
             ivec4 relation;\n
+            vec4 color;\n
         };\n
 
         void main()\n
         {\n
             TexCoord = vertex.zw;\n
 
+            if ( relation.x == 0 )\n
+            {\n
+                vec2 b = (parent_container.zw-parent_container.xy);\n
+                //vec2 t  = (container)
+
+                vec4 l = vec4(parent_container.x + (container.x*b.x), parent_container.y + (container.y*b.y),0, 1);\n
+                
+                vec4 r = l + vec4((container.z*b.x), 0.0, 0.0, 0.0);\n
+                vec4 rt = r + vec4(0, container.w*b.y, 0.0, 0.0);\n
+                vec4 tl = l + vec4(0.0, container.w*b.y, 0.0, 0.0);\n
+
+                vec4 ar[4] = { l,r,rt,tl };\n
+
+
+                gl_Position = ar[gl_VertexID];
+            }\n
+            if (relation.x == 1)\n
+            {\n
+                vec2 b = (parent_container.zw-parent_container.xy);\n
+                vec4 l = vec4( (parent_container.x + (b.x/2)) + (container.x*(b.x/2)), (parent_container.y + (b.y/2)) + (container.y*(b.y/2)),0,1 );
+                vec4 r = vec4( (parent_container.x + (b.x/2)) + (container.z*(b.x/2)), (parent_container.y + (b.y/2)) + (container.y*(b.y/2)),0,1 );
+                vec4 rt = vec4( (parent_container.x + (b.x/2)) + (container.z*(b.x/2)), (parent_container.y + (b.y/2)) + (container.w*(b.y/2)),0,1 );
+                vec4 tl = vec4( (parent_container.x + (b.x/2)) + (container.x*(b.x/2)), (parent_container.y + (b.y/2)) + (container.w*(b.y/2)),0,1 );
+
+
+                vec4 ar[4] = { l,r,rt,tl };\n
+
+                gl_Position = ar[gl_VertexID];
+            }\n
+
+            return;
             
             vec4 screen_space_container = vec4( container.x, container.y, container.z, container.w );\n
             vec4 parent_space_container = vec4( parent_container.x-1, parent_container.y-1, parent_container.z, parent_container.w );\n
@@ -197,7 +239,7 @@ class layout_element:
             
             
             
-            gl_Position = vec4( parent_space_position, 0.0, 1.0 );\n
+            //gl_Position = vec4( parent_space_position, 0.0, 1.0 );\n
             //gl_Position = vec4( screen_space_container.z+vertex.x, screen_space_container.w+vertex.y, 0.0, 1.0);\n
             //gl_Position = vec4(vertex.x, vertex.y, 0.0, 1.0);\n
         }\n
@@ -210,15 +252,31 @@ class layout_element:
         #version 460 core\n
 
         in vec2 TexCoord;\n
+
+
+        //style of element
+        layout (std140) uniform style {\n
+            vec4 container;\n
+            vec4 parent_container;\n
+            ivec4 relation;\n
+            vec4 color;\n
+        };\n
         
         void main()\n
         {\n
-            gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);\n
+            gl_FragColor = color;\n
         }\n
 
         '''
         self.program = ConstProgram([vertex_shader, fragment_shader], [GL_VERTEX_SHADER, GL_FRAGMENT_SHADER])
 
+        return
+
+    def set_style(self, container=(0.5,0.5,1.0,1.0), color=(1,0,0,1), relation=0):
+        self.style.set_container(container)
+        self.style.set_color(color)
+        self.style.set_relation(relation)        
+        self.update_uniform()
         return
 
     def make_uniform(self):
@@ -228,6 +286,12 @@ class layout_element:
         self.uniform_unit = self.state.add_uniform_buffer()
         glBindBuffer(GL_UNIFORM_BUFFER, 0)
         return
+    
+    def update_uniform(self):
+        glBindBuffer(GL_UNIFORM_BUFFER, self.style_uniform)
+        #alternatively glBufferSubData
+        glBufferData(GL_UNIFORM_BUFFER, ctypes.sizeof(self.style), ctypes.byref(self.style), GL_DYNAMIC_DRAW)
+        glBindBuffer(GL_UNIFORM_BUFFER,0)
 
     def on_mouse_move(self, x, y):
         x = x/self.state.vw

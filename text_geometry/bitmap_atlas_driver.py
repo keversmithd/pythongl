@@ -78,11 +78,17 @@ def main():
 
     tracked_text_display.generate_mesh()
 
+    ui = """
 
-    simple_element = layout_element(scene)
+    <el id="toolbar" box = (-1vw,0,1vw,0) height = 20px color = (1,0,0,1)>
+        <el id="File Button"> File </el>
+    </el>
 
-    child_element = layout_element(scene)
-    child_element.link_to_parent(simple_element, [0.0, 0.0, 0.5,0.5])
+    <el id="footbar" box = (-1vw,-1vw, 1vw, -1vw) height = 20px color = (1,0,0,1)>
+    </el>
+
+    """
+
 
 
     glClearColor(1.0, 1.0, 0.0, 1.0)
@@ -96,9 +102,8 @@ def main():
         scene.time = glfw.get_time()
 
         # Render your OpenGL scene here
-        tracked_text_display.draw()
-        #simple_element.draw()
-        #child_element.draw()
+        # move the child element over time
+        
 
         if(glfw.get_key(window, glfw.KEY_V) == glfw.PRESS):
             tracked_value[0] = "track" + random.choice(["me", "you", "us", "them"])
