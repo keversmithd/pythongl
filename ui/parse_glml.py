@@ -1,10 +1,14 @@
 
 class glml_node:
     parent = None
-    children = []
+    element_title = None
+    children = None
     attributes = None
 
-    def __init__(attributes):
+    def __init__(self,element_title, attributes):
+        self.attributes = attributes
+        self.element_title = element_title
+        self.children = []
         return
 
 class glml_parse_state:
@@ -12,12 +16,14 @@ class glml_parse_state:
     def __init__(self, parse_index, parsing_content):
 
         self.parse_index = parse_index
+
         self.parsing_content = parsing_content
         self.parsing_content_length = len(parsing_content)
 
         # end of the parsing meta context
 
         # attributing node
+        self.current_element_title = None
         self.currently_attributing_element = None
         self.last_attributing_element = None
 
@@ -28,17 +34,33 @@ class glml_parse_state:
         return
 
 def close_element(state_ptr):
+    
     state = state_ptr[0]
     # so if using a tree this is when we make the attributing element the parent of the 
     # current node
     if(state.root == None):
-        state.root = glml_node(state.currently_attributing_element)
-        state.current_node = state.root
+        print("Error no root no open element")
     else:
-        state.current_node.children.append(glml_node(state.currently_attributing_element))
         if(state.current_node.parent != None):
             state.current_node = state.current_node.parent
 
+    return
+
+def enlist_element(state_ptr):
+    
+    state = state_ptr[0]
+    # so if using a tree this is when we make the attributing element the parent of the 
+    # current node
+    if(state.root == None):
+        state.root = glml_node(state.current_element_title, state.currently_attributing_element)
+        state.current_node = state.root
+    else:
+        # create the new node
+        node = glml_node(state.current_element_title, state.currently_attributing_element)
+        # set the nodes parent to the current node
+        node.parent = state.current_node
+        state.current_node.children.append(node)
+        state.current_node = node
     return
 
 def recognize_element(element_title, state_ptr):
@@ -49,10 +71,12 @@ def recognize_element(element_title, state_ptr):
     state = state_ptr[0]
 
     if( element_title in recognized_elements ):
-
+    
         element_index = recognized_elements[element_title]
+        
         element_attributes = recognized_attributes[element_index]
         state.currently_attributing_element = element_attributes.copy()
+        state.current_element_title = element_title
 
         return True
     else:
@@ -111,7 +135,27 @@ def get_attribute_title(state_ptr):
         state.parse_index += 1
 
     return attribute_title, token_stopped_at
-    
+
+def eat_closing_tag(state_ptr):
+    state = state_ptr[0]
+    state.parse_index += 1
+    potential_element_title, token_stopped_at = get_attribute_title(state_ptr)
+
+    while(state.parse_index < state.parsing_content_length):
+
+        attribute_title, token_stopped_at = get_attribute_title(state_ptr)
+        if(token_stopped_at == ">"):
+            state.parse_index += 1
+            break
+        if(token_stopped_at == "="):
+            #get_attribute_parameter(attribute_title, state_ptr)
+            #should try and eat the paramter, this is basically an error
+            continue
+
+        state.parse_index += 1
+
+    return
+
 def parse_element(state_ptr):
     # parse all attributes up until the closing bracket, and if / is found then end current element attribution.
 
@@ -126,13 +170,17 @@ def parse_element(state_ptr):
 
     potential_element_title, token_stopped_at = get_attribute_title(state_ptr)
 
+
+
     if ( token_stopped_at == "/"):
         # if there is the slash in the preamble then please close the current element, i guess disregard the name
         # for now
         close_element(state_ptr)
-    elif ( token_stopped_at != " "):
-        # add an empty element which is based on the recognized element
-        recognize_element("el")
+        
+        eat_closing_tag(state_ptr)
+        
+        return
+        
     else:
         if ( not recognize_element(potential_element_title, state_ptr) ) : recognize_element("el")
 
@@ -141,6 +189,7 @@ def parse_element(state_ptr):
 
         attribute_title, token_stopped_at = get_attribute_title(state_ptr)
         if(token_stopped_at == ">"):
+            enlist_element(state_ptr)
             state.parse_index += 1
             break
         if(token_stopped_at == "="):
@@ -182,7 +231,30 @@ def parse_glml(ui):
 
         state.parse_index += 1
 
+    return state
 
-parse_glml("<el box=(1vw,2vw,3vw,4vw)>text_content</el>")
+
+def print_attributes(node):
+    
+    for attr in node.attributes:
+        
+        print(attr, ": ", node.attributes[attr])
+            
+
+def traverse_state(root):
+    
+    if (root == None):
+        return
+
+    print_attributes(root)
+
+    for child in root.children:
+        
+        traverse_state(child)
+
+
+
+
+
         
     

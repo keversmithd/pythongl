@@ -1,4 +1,5 @@
 import glfw
+
 class state:
     def __init__(self):
 
@@ -34,6 +35,8 @@ class state:
         return
     
     def on_key_event(self, key, scancode, action, mods):
+        
+        # rough event detection
         for event_object in self.event_objects:
             if(hasattr(event_object, 'on_key_event') and event_object.on_key_event != None):
                 event_object.on_key_event(key, action)

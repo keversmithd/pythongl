@@ -61,43 +61,6 @@ def main():
     # setting state
     glfw.set_window_user_pointer(window, scene)
     
-    #Loading singular font
-    joanRegularAtlas = bitmap_atlas_loader("fonts\\Joan-Regular.ttf", [512,512], 10, 10).make_atlas(scene, "joanRegular")
-    
-    #Simple bitmap font generator
-    #text_maker = bitmap_text(scene)
-    #text_maker.render_text("hellog", "joanRegular")
-
-    tracked_value = ["track mgggml"]
-    tracked_text_display = text_display(scene, "joanRegular")
-
-    tracked_text_display.set_tracked_value(tracked_value)
-    tracked_text_display.set_location(np.array([-1.0,0.0], dtype=np.float32))
-    tracked_text_display.set_container( [ np.array([0,0.0], dtype=np.float32), np.array([1,1], dtype=np.float32) ] )
-    tracked_text_display.set_size(3)
-
-    tracked_text_display.generate_mesh()
-
-    ui = """
-
-    <el id="toolbar" box = (-1vw,0,1vw,0) height = 20px color = (1,0,0,1)>
-        <el id="File Button"> File </el>
-    </el>
-
-    how responsive is this portal montior, thank you richard for becoming
-    a citizen of the monto space.
-
-    <el id="footbar" box = (-1vw,-1vw, 1vw, -1vw) height = 20px color = (1,0,0,1)>
-    </el>
-
-    """
-
-    parent_element = layout_element(scene)
-    parent_element.set_style((0.5,0.5,1.0,1.0), (1,0,0,1), 0)
-    child_element  = layout_element(scene, parent_element)
-    child_element.set_style((0.0,0.0, 1.0,1.0), (0,1,0,1), 1)
-
-
 
     glClearColor(1.0, 1.0, 0.0, 1.0)
 
@@ -109,15 +72,9 @@ def main():
         
         scene.time = glfw.get_time()
 
-        #parent_element.draw()
-        #child_element.draw()
         # Render your OpenGL scene here
-        #tracked_text_display.draw()
-        
-
-        if(glfw.get_key(window, glfw.KEY_V) == glfw.PRESS):
-            tracked_value[0] = "track" + random.choice(["me", "you", "us", "them"])
-
+        # move the child element over time
+    
         # Swap buffers and poll events
         glfw.swap_buffers(window)
         glfw.poll_events()

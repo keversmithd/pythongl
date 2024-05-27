@@ -105,10 +105,7 @@ class bitmap_text:
 
         glEnableVertexAttribArray(0)
         glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4*4, ctypes.c_void_p(0))
-
-        
-
-    
+ 
     def draw(self):
 
         glUseProgram(self.program)
