@@ -1,4 +1,4 @@
-# glml transformer
+# glml transformer from pc
  transform glml state into elements
  the transformer takes the attribute data and parses it using the current graphics state
  the graphics state contains information about window size, pixel length etc
