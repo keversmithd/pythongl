@@ -12,6 +12,13 @@ from state.state import *
 class transform_glml:
     def __init__(self):
         return
+
+    def transform():
+        # traverse document_tree
+        # creating elements in scene_context at each node
+        # and then just setting the previous parent as the attribute.
+        
+        return
     
     
     

@@ -216,9 +216,6 @@ def handle_token(state_ptr):
     
     return
 
-
-    
-
 def parse_glml(ui):
 
     #set parse state
