@@ -109,7 +109,7 @@ def main():
         
         scene.time = glfw.get_time()
 
-        #parent_element.draw()
+        parent_element.draw()
         #child_element.draw()
         # Render your OpenGL scene here
         #tracked_text_display.draw()
