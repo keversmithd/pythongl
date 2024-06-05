@@ -121,6 +121,7 @@ class layout_element:
 
         if ( parent == None):
             self.style = layout_element_style()
+            self.parent = None
         else:
             self.style = layout_element_style()
             self.link_to_parent(parent)
@@ -369,7 +370,7 @@ class layout_element:
 
         # if this objects parent has changed, then update the style uniform, as well update the event system with new coordinates using this event system id.
 
-        if ( self.parent.has_Changed == True ):
+        if ( self.parent != None and self.parent.has_changed == True ):
             self.update_to_parent()
             self.update_uniform(self)
 
