@@ -17,3 +17,12 @@
   need to store id's which link to node for faster selection
   the element itself should have optimal uniform structure
   
+
+## DEV LOG 2 
+
+1st hour build element which is versatile and usable to instantiate with the ui transformer, this also involves a way to wrap and deliver the objects the scene. 
+
+since MVP of the inital element has a flaw of many buffer updates for its uniform there are refactors which can help, such as instancing, maybe using like a shader control to write the updates to a uniform texture which has like one draw call but still updates [save for later]
+
+
+2nd build event object which abstracts the partitioning data structure but delivers real time collsiion results ot objects.

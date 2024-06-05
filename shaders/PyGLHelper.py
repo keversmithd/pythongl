@@ -178,6 +178,7 @@ class simple_element_mesh:
         return
 
     def init_buffers(self, vertex_data, element_data, layout, layout_size):
+    
         glBindVertexArray(self.vertex_array)
         glBindBuffer(GL_ARRAY_BUFFER, self.vertex_buffer)
         glBufferData(GL_ARRAY_BUFFER, vertex_data.nbytes, vertex_data, GL_STATIC_DRAW)

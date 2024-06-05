@@ -9,6 +9,7 @@ sys.path.append(workspace_directory)
 
 from shaders.PyGLHelper import *
 
+# uniform object passed in for each element.
 class layout_element_style(ctypes.Structure):
 
     _fields_ = [("container", ctypes.c_float * 4),
@@ -17,6 +18,7 @@ class layout_element_style(ctypes.Structure):
                 ("color", ctypes.c_float * 4)]
     
     def __init__( self, container=(0.5,0.5,1,1), parent_container=(-1,-1,1,1), relation=(0,0,0,0), color=(1,0,0,1) ):
+
         self.container[0] = container[0]
         self.container[1] = container[1]
         self.container[2] = container[2]
@@ -101,6 +103,7 @@ class layout_element_style(ctypes.Structure):
         return
      
 class layout_element:
+    
     def __init__(self, state, parent=None):
 
         # gl objects
@@ -111,37 +114,47 @@ class layout_element:
         #connects to state
         self.state = state
 
-        self.program = None
-
         # links the event object up.
         self.state.event_objects.append(self)
 
-        self.parent = parent
+        # if parent equals none, set style to default.
 
-        # if the parent exsits lets use it
-        if(parent != None):
-            self.style = layout_element_style((0.0,0.0,0.5,0.5), parent.style.get_container(), (0,0,0,0), (1,0,0,1))
+        if ( parent == None):
+            self.style = layout_element_style()
         else:
             self.style = layout_element_style()
-
-        self.previous_local_mouse = None
-        self.was_dragged = False
-
+            self.link_to_parent(parent)
+        
+        # set program to non and create it in update_program
+        self.program = None
         self.update_program()
         # creates program and links the shader material
+        
+        # uniform creation process [must update]
         self.make_uniform()
+
         # creates the uniform and sets the style information.
         self.generate_geometry()
+
+        # stores and updates buffer data for vertex
         self.element_mesh.init_buffers(self.element_geometry.vertex_data, self.element_geometry.element_data, [(4, GL_FLOAT)], 4*4)
 
-    def link_to_parent(self, parent, container):
+        # make an updated flag to determine whether this object has been updated or changed, ie its container etc.
+        self.has_changed = True
+
+    # links the parent to this object and updates the style.
+    def link_to_parent(self, parent):
+        
+        # set the parent as permanent reference.
         self.parent = parent
 
         self.style.set_parent_container(parent.style.get_container())
-        self.style.set_container(container)
-
 
         return
+
+    # update to parent updates this objects style to parents new status.
+    def update_to_parent(self):
+        self.style.set_parent_container(self.parent.style.get_container())
 
     def update_program(self):
 
@@ -262,9 +275,11 @@ class layout_element:
             vec4 color;\n
         };\n
         
+        out vec4 FragColor;
+
         void main()\n
         {\n
-            gl_FragColor = color;\n
+            FragColor = color;\n
         }\n
 
         '''
@@ -280,9 +295,11 @@ class layout_element:
         return
 
     def make_uniform(self):
+
         self.style_uniform = glGenBuffers(1)
         glBindBuffer(GL_UNIFORM_BUFFER, self.style_uniform)
         glBufferData(GL_UNIFORM_BUFFER, ctypes.sizeof(self.style), ctypes.byref(self.style), GL_DYNAMIC_DRAW)
+
         self.uniform_unit = self.state.add_uniform_buffer()
         glBindBuffer(GL_UNIFORM_BUFFER, 0)
         return
@@ -334,6 +351,7 @@ class layout_element:
 
     def generate_geometry(self):
 
+        # generate uv quad
         self.element_geometry.reset_indexes()
 
         self.element_geometry.resize_arrays(1, [4*4,6])
@@ -347,12 +365,20 @@ class layout_element:
 
         return
 
-    def draw(self):
+    def render(self):
+
+        # if this objects parent has changed, then update the style uniform, as well update the event system with new coordinates using this event system id.
+
+        if ( self.parent.has_Changed == True ):
+            self.update_to_parent()
+            self.update_uniform(self)
 
         glUseProgram(self.program)
         self.element_mesh.bind_for_draw()
         
+        # set the uniform
         glSetBlock(self.program, "style", self.uniform_unit)
         glBindBufferBase(GL_UNIFORM_BUFFER, self.uniform_unit, self.style_uniform)
         
+        # draw the elements
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, None)

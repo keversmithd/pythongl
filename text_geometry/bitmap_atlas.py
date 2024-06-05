@@ -154,9 +154,6 @@ class bitmap_atlas_loader:
         # freetype.FT_Done_Face(face)
         # freetype.FT_Done_FreeType(freetype)
 
-    
-    
-
     def load_onto_quad(self, texture_binding_point = 0):
 
 
