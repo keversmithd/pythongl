@@ -10,96 +10,87 @@ sys.path.append(workspace_directory)
 from shaders.PyGLHelper import *
 
 # uniform object passed in for each element.
-class layout_element_style(ctypes.Structure):
+class layout_element_style:
 
-    _fields_ = [("container", ctypes.c_float * 4),
-                ("parent_container", ctypes.c_float * 4),
-                ("relation", ctypes.c_int * 4),
-                ("color", ctypes.c_float * 4)]
     
-    def __init__( self, container=(0.5,0.5,1,1), parent_container=(-1,-1,1,1), relation=(0,0,0,0), color=(1,0,0,1) ):
 
-        self.container[0] = container[0]
-        self.container[1] = container[1]
-        self.container[2] = container[2]
-        self.container[3] = container[3]  
+    
+    
+    def __init__( self, container=(0.5,0.5,1,1), parent_container=(-1,-1,1,1), relation=0, color=(1,0,0,1) ):
+
+        self.data = np.zeros(16, dtype=np.float32)
+
+        self.set_container(container)  
         
-        self.parent_container[0] = parent_container[0]
-        self.parent_container[1] = parent_container[1]
-        self.parent_container[2] = parent_container[2]
-        self.parent_container[3] = parent_container[3]
+        self.set_parent_container(parent_container)
 
-        self.relation[0] = relation[0]
-        self.relation[1] = relation[1]
-        self.relation[2] = relation[2]
-        self.relation[3] = relation[3]
+        self.set_relation(relation)
 
-        self.color[0] = color[0]
-        self.color[1] = color[1]
-        self.color[2] = color[2]
-        self.color[3] = color[3]
+        self.set_color(color)
 
     def set_container(self, container):
-        self.container[0] = container[0]
-        self.container[1] = container[1]
-        self.container[2] = container[2]
-        self.container[3] = container[3]
+
+        self.data[0] = container[0]
+        self.data[1] = container[1]
+        self.data[2] = container[2]
+        self.data[3] = container[3]
         return
 
     def set_parent_container(self, container):
-        self.parent_container[0] = container[0]
-        self.parent_container[1] = container[1]
-        self.parent_container[2] = container[2]
-        self.parent_container[3] = container[3]
+        self.data[4+0] = container[0]
+        self.data[4+1] = container[1]
+        self.data[4+2] = container[2]
+        self.data[4+3] = container[3]
         return
 
     def set_color(self, color):
 
-        self.color[0] = color[0]
-        self.color[1] = color[1]
-        self.color[2] = color[2]
-        self.color[3] = color[3]
+        self.data[12+0] = color[0]
+        self.data[12+1] = color[1]
+        self.data[12+2] = color[2]
+        self.data[12+3] = color[3]
         return
 
     def get_container(self):
 
         container = [0,0,0,0]
-        #get two axis system
-        a1 = np.array([self.parent_container[2] - self.parent_container[0], 0], dtype=float)
-        a2 = np.array([0, self.parent_container[3] - self.parent_container[1]], dtype=float)
 
-        if(self.relation[0] == 0):
-            container[0] = self.parent_container[0] + a1[0]*self.container[0]
-            container[1] = self.parent_container[1] + a2[1]*self.container[1]
-            container[2] = self.parent_container[0] + a1[0]*self.container[2]
-            container[3] = self.parent_container[1] + a2[1]*self.container[3]
-        if(self.relation[1] == 1):
-            container[0] = (self.parent_container[0]+(a1[0]/2)) + (a1[0]/2)*self.container[0]
-            container[1] = (self.parent_container[1] + (a2[1]/2)) + (a2[1]/2)*self.container[1]
-            container[2] = (self.parent_container[0]+(a1[0]/2)) + (a1[0]/2)*self.container[2]
-            container[3] = (self.parent_container[1] + a2[1]/2) + (a2[1]/2)*self.container[3]
+        #get two axis system
+        a1 = np.array([self.data[4+2] - self.data[4+0], 0], dtype=float)
+        a2 = np.array([0, self.data[4+3] - self.data[4+1]], dtype=float)
+
+        if(self.data[8+0] == 0):
+            self.data[0] = self.data[4+0] + a1[0]*self.data[0]
+            self.data[1] = self.data[4+1] + a2[1]*self.data[1]
+            self.data[2] = self.data[4+0] + a1[0]*self.data[2]
+            self.data[3] = self.data[4+1] + a2[1]*self.data[3]
+        if(self.data[8+1] == 1):
+            self.data[0] = (self.data[4+0]+(a1[0]/2)) + (a1[0]/2)*self.data[0]
+            self.data[1] = (self.data[4+1] + (a2[1]/2)) + (a2[1]/2)*self.data[1]
+            self.data[2] = (self.data[4+0]+(a1[0]/2)) + (a1[0]/2)*self.data[2]
+            self.data[3] = (self.data[4+1] + a2[1]/2) + (a2[1]/2)*self.data[3]
 
 
         return container
     
     def set_relation(self, relation):
-        self.relation[0] = relation
-        self.relation[1] = relation
-        self.relation[2] = relation
-        self.relation[3] = relation
+        self.data[8+0] = relation
+        self.data[8+1] = relation
+        self.data[8+2] = relation
+        self.data[8+3] = relation
 
     def translate_container(self, translation):
-        self.container[0] = self.container[0] + translation[0]
-        self.container[1] = self.container[1] + translation[1]
-        self.container[2] = self.container[2] + translation[0]
-        self.container[3] = self.container[3] + translation[1]
+        self.data[0] = self.data[0] + translation[0]
+        self.data[1] = self.data[1] + translation[1]
+        self.data[2] = self.data[2] + translation[0]
+        self.data[3] = self.data[3] + translation[1]
         return
         
     def set_parent_container(self, container):
-        self.parent_container[0] = container[0]
-        self.parent_container[1] = container[1]
-        self.parent_container[2] = container[2]
-        self.parent_container[3] = container[3] 
+        self.data[4+0] = container[0]
+        self.data[4+1] = container[1]
+        self.data[4+2] = container[2]
+        self.data[4+3] = container[3] 
         return
      
 class layout_element:
@@ -299,7 +290,10 @@ class layout_element:
 
         self.style_uniform = glGenBuffers(1)
         glBindBuffer(GL_UNIFORM_BUFFER, self.style_uniform)
-        glBufferData(GL_UNIFORM_BUFFER, ctypes.sizeof(self.style), ctypes.byref(self.style), GL_DYNAMIC_DRAW)
+
+        # Convert the ctype.Structure into a numpy array since certain 
+        
+        glBufferData(GL_UNIFORM_BUFFER, self.style.data.nbytes, self.style.data, GL_DYNAMIC_DRAW)
 
         self.uniform_unit = self.state.add_uniform_buffer()
         glBindBuffer(GL_UNIFORM_BUFFER, 0)
@@ -308,7 +302,7 @@ class layout_element:
     def update_uniform(self):
         glBindBuffer(GL_UNIFORM_BUFFER, self.style_uniform)
         #alternatively glBufferSubData
-        glBufferData(GL_UNIFORM_BUFFER, ctypes.sizeof(self.style), ctypes.byref(self.style), GL_DYNAMIC_DRAW)
+        glBufferData(GL_UNIFORM_BUFFER, self.style.data.nbytes, self.style.data, GL_DYNAMIC_DRAW)
         glBindBuffer(GL_UNIFORM_BUFFER,0)
 
     def on_mouse_move(self, x, y):
