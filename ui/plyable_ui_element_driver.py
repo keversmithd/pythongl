@@ -8,6 +8,9 @@ sys.path.append(workspace_directory)
 
 from shaders.PyGLHelper import *
 
+# Checking version.
+from OpenGL.GL import glGetString, GL_VERSION, GL_VENDOR, GL_RENDERER, GL_SHADING_LANGUAGE_VERSION
+
 from state.state import *
 from layout_element import *
 
@@ -59,6 +62,11 @@ def main():
     window = initWindow(800,600, True, "Hello world", window_setup, scene)
     if not window:
         return  
+
+    print("Vendor: ", glGetString(GL_VENDOR))
+    print("Renderer: ", glGetString(GL_RENDERER))
+    print("OpenGL Version: ", glGetString(GL_VERSION))
+    print("GLSL Version: ", glGetString(GL_SHADING_LANGUAGE_VERSION))
     
     # setting state
     glfw.set_window_user_pointer(window, scene)
