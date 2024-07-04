@@ -8,9 +8,6 @@ sys.path.append(workspace_directory)
 
 from shaders.PyGLHelper import *
 
-
-
-
 class text_display:
 
     def __init__(self, state, font):
@@ -122,10 +119,12 @@ class text_display:
 
         uniform sampler2D atlas;\n
 
+        out vec4 frag_color;
+
         void main()\n
         {\n
             float density = texture(atlas, TexCoord).r;
-            gl_FragColor = vec4(1.0, 0.0, 0.0, density);
+            frag_color = vec4(1.0, 0.0, 0.0, density);
             //gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
         }\n'''
 

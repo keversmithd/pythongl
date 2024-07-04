@@ -179,11 +179,13 @@ class text_cursor:
         in vec2 TexCoord;\n
         uniform sampler2D atlas;\n
         uniform float time;\n
-        
+
+        out vec4 frag_color;
+
         void main()\n
         {\n
             float density = texture(atlas, TexCoord).r;
-            gl_FragColor = vec4(1.0, 0.0, 0.0, density*abs(cos(time)));
+            frag_color = vec4(1.0, 0.0, 0.0, density*abs(cos(time)));
         }\n
 
         '''
@@ -347,10 +349,11 @@ class text_display:
         #version 460 core\n
         in vec2 TexCoord;\n
         
-
         uniform sampler2D atlas;\n
         uniform vec2 resolution; \n
         uniform vec4 container;\n
+
+        vec4 frag_color;
 
         void main()\n
         {\n
@@ -366,7 +369,7 @@ class text_display:
 
             float density = texture(atlas, TexCoord).r;
             
-            gl_FragColor = vec4(fragCoord.x, 0.0, 0.0, density);
+            frag_color = vec4(fragCoord.x, 0.0, 0.0, density);
             //gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
         }\n'''
 

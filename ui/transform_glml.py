@@ -12,6 +12,9 @@ from collections import deque
 from parse_glml import *
 from state.state import *
 
+# Import the ui element machine in order to communicate and generate some layout ui elements
+from ui.layout_element_machine import *
+
 # import the layout object, should/could have a more interesting like connection object.
 # the connection object will listen for calls and will interface between the transformer and the state object for rendering calls.
 from layout_element import *

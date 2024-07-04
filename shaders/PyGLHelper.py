@@ -96,7 +96,7 @@ def CreateProgram(shader_sources, shader_types):
     # Compile shaders and create program
     shaders = []
     current_directory = os.getcwd()
-    print(current_directory)
+    # print(current_directory)
     for source, shader_type in zip(shader_sources, shader_types):
         source = current_directory + '\\' + source
         with open(source, 'r') as file:
@@ -154,6 +154,7 @@ def glSetFloat(program, name, value):
     glUniform1f(location, value)
 
 def glSetBlock(program, name, value):
+    
     location = glGetUniformBlockIndex(program, name)
     if(location == -1):
         raise RuntimeError("Uniform not found")

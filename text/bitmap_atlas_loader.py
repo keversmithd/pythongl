@@ -4,17 +4,25 @@ import sys
 import ctypes
 import numpy as np
 
+from collections import deque
+
 workspace_directory = os.path.dirname(os.path.realpath(__file__))
 workspace_directory = workspace_directory.rsplit('\\', 1)[0]
 sys.path.append(workspace_directory)
 
 from shaders.PyGLHelper import *
 
+# charmap has the format
+# u,v [bottom_left]
+# u,v [top_right]
+# normalized width, normalized height
+# left advance, vertical advance
 
 class bitmap_atlas:
     charmap = None
     char_ranges = None
     atlas_texture = None
+    texture_unit = None
 
     def __init__(self, charmap, char_ranges, atlas_texture):
         self.charmap = charmap
@@ -22,31 +30,38 @@ class bitmap_atlas:
         self.atlas_texture = atlas_texture
 
 
-
+# bitmap atlas loader generates a bitmap atals as specified above.
 class bitmap_atlas_loader:
-    char_ranges = [[32,126]]
+    char_ranges = [[32,122]]
     chars_loaded = 0
     charmap = {}
     texture_data = None
 
-    def __init__(self, font, resolution, horizontal_margin, vertical_margin):
+    # font is the font path, resolution is the size of the bitmap resolution
+    # the margin is the space between each character.
+    def __init__(self, state, atlas_name, font, resolution = [512, 512], horizontal_margin = 10, vertical_margin = 10, font_size=48):
 
         self.font = font
         self.resolution = resolution
         self.horizontal_margin = horizontal_margin
         self.vertical_margin = vertical_margin
+        self.font_size = font_size
+        self.atlas_name = atlas_name
+        self.state = state
 
-        return
+        self.make_atlas()
+
     
+    # Inserts a character token into the bitmap text generated upon init.
     def insert_bitmap(self,cursor_details, bitmap, row_details):
 
         
-        _horizontal_space = ( self.resolution[0]  -  (cursor_details[0]+bitmap.width) ) < self.horizontal_margin
+        # _horizontal_space = ( self.resolution[0]  -  (cursor_details[0]+bitmap.width) ) < self.horizontal_margin
         
-        if(_horizontal_space):
-            cursor_details[0] = self.horizontal_margin            
-            cursor_details[1] = cursor_details[1] + (row_details[0]) + self.vertical_margin
-            row_details[0] = 0
+        # if(_horizontal_space):
+        #     cursor_details[0] = self.horizontal_margin            
+        #     cursor_details[1] = cursor_details[1] + (row_details[0]) + self.vertical_margin
+        #     row_details[0] = 0
 
         if(bitmap.buffer == None or bitmap.rows == 0 or bitmap.width == 0):
             return True 
@@ -58,7 +73,7 @@ class bitmap_atlas_loader:
         copy_bitmap = np.array(bitmap.buffer, dtype=np.ubyte)
 
         for i in range(0, bitmap.rows):
-            for j in range(0,bitmap.width):
+            for j in range(0, bitmap.width):
                 
                 if(((cursor_details[1] + i) * self.resolution[0]) + cursor_details[0] + j > (self.resolution[0] * self.resolution[1])):
                     return False
@@ -71,9 +86,11 @@ class bitmap_atlas_loader:
 
         return True
 
-    def make_atlas(self, state, name):
+    def make_atlas(self):
 
-        self.LoadActiveFont()
+        if ( self.load_font_to_texture() == False ):
+            return
+
         atlas_texture = glGenTextures(1)
         glBindTexture(GL_TEXTURE_2D, atlas_texture)
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, self.resolution[0], self.resolution[1], 0, GL_RED, GL_UNSIGNED_BYTE, self.texture_data)
@@ -86,18 +103,17 @@ class bitmap_atlas_loader:
 
         glBindTexture(GL_TEXTURE_2D, 0)
 
-        state.texture_atlases[name] = [bitmap_atlas(self.charmap, self.char_ranges, atlas_texture), state.used_texture_units]
+        atlas = bitmap_atlas(self.charmap, self.char_ranges, atlas_texture)
 
-        state.used_texture_units = state.used_texture_units + 1
+        self.state.add_texture_atlas(self.atlas_name, atlas)
 
-        return bitmap_atlas(self.charmap, self.char_ranges, atlas_texture)
 
-    def LoadActiveFont(self):
+    # returns true if opened face successfuly and added the bitmaps to the texture, else return false.
+    def load_font_to_texture(self):
+
         if(self.resolution != None and self.resolution[0] != 0 and self.resolution[1] != 0):
-            #self.texture_data = [0] * (self.resolution[0] * self.resolution[1])
             self.texture_data = (ctypes.c_ubyte * (self.resolution[0] * self.resolution[1]))(0)
-            #self.texture_data = np.array([0] * (self.resolution[0] * self.resolution[1]), dtype=np.ubyte)
-            #self.texture_data = np.random.randint(0,255, (self.resolution[0], self.resolution[1],4), dtype=np.ubyte)
+
 
         current_directory = os.path.dirname(os.path.realpath(__file__))
         current_directory = current_directory.rsplit('\\', 1)[0]
@@ -108,10 +124,12 @@ class bitmap_atlas_loader:
 
         if(face == None):
             print("Error loading font")
-            return
+            return False
         
         face.set_char_size( 48*64 )
+        
 
+    
         cursor_details = [self.horizontal_margin,self.vertical_margin]
         row_details = [0,0]
 
@@ -120,6 +138,15 @@ class bitmap_atlas_loader:
 
                 face.load_char(j)
                 bitmap = face.glyph.bitmap
+
+                # check to see if the cursor is going to overflow
+
+                _horizontal_space = ( self.resolution[0]  -  (cursor_details[0]+bitmap.width) ) < self.horizontal_margin
+        
+                if(_horizontal_space):
+                        cursor_details[0] = self.horizontal_margin            
+                        cursor_details[1] = cursor_details[1] + (row_details[0]) + self.vertical_margin
+                        row_details[0] = 0
 
                 if(face.glyph.bitmap.width == 0):
                     self.charmap[ j ] = [
@@ -154,6 +181,9 @@ class bitmap_atlas_loader:
         # freetype.FT_Done_Face(face)
         # freetype.FT_Done_FreeType(freetype)
 
+        return True
+        # Loads and activates font face related to the current sent this.font file path.
+    
     def load_onto_quad(self, texture_binding_point = 0):
 
 
@@ -229,9 +259,12 @@ class bitmap_atlas_loader:
         #version 460 core\n
         in vec2 Texcoord;\n
         uniform sampler2D tex;\n
+        out vec4 frag_color;
         void main()\n
         {\n
-            gl_FragColor = texture(tex, Texcoord);\n
+            
+            frag_color = vec4(Texcoord,0.0,1.0);\n
+            frag_color = vec4(texture(tex, Texcoord).xyz, 1.0);
             //gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);\n
         }\n
         '''
@@ -243,11 +276,6 @@ class bitmap_atlas_loader:
         return vertex_array, element_buffer, program, atlas_texture
 
                 
-
-
-
-
-
 # joanRegular = TextGeometry()
 # joanRegular.LoadActiveFont("fonts\\Joan-Regular.ttf")
 

@@ -1,4 +1,14 @@
-import glfw
+import numpy as np
+import os
+import sys
+
+
+# Import gl and glfw.
+workspace_directory = os.path.dirname(os.path.realpath(__file__))
+workspace_directory = workspace_directory.rsplit('\\', 1)[0]
+sys.path.append(workspace_directory)
+from shaders.PyGLHelper import *
+
 
 # currently ecompasses window information, texture units, should include buffer units, mouse information, scoped time information, and houses event objects.
 
@@ -9,13 +19,12 @@ class state:
     def __init__(self):
 
         #texture related
+        self.texture_units = {}
         self.texture_atlases = {}
         self.used_texture_units = 0
-
+        
         #buffer related
         self.used_uniform_buffers = 0
-
-
 
         self.window = None
         self.vw = 0
@@ -27,6 +36,7 @@ class state:
 
         #time related
         self.time = 0
+        self.delta_time = 0
 
         # set up render_batch like a list of objects to call render on, could just store a pointer to the draw call but doesn't work quite as well in lower level languages.
         
@@ -42,7 +52,13 @@ class state:
         # array of reusable cells in the render batch to borrow.
         self.available_render_batch_cells = []
 
+        # houses objects that listen to events
         self.event_objects = []
+
+        # setup the activate camerae
+        self.active_camera = None
+        # setup list of attached cameras
+        self.camera_map = {}
 
         return
 
@@ -54,7 +70,29 @@ class state:
         self.vh = window_size[1]
         return
 
-    # adds object to render_batch
+    ## TEXTURES
+    ## TEXTURE ATLAS ADDING
+    def add_texture_atlas(self, atlas_name, atlas):
+        atlas.texture_unit = self.used_texture_units
+        self.texture_atlases[atlas_name] = atlas
+        self.used_texture_units += 1
+    
+    # ADDING A TEXTURE TO THE CONTEXT
+    def add_texture_unit(self):
+
+        texture_unit = self.used_texture_units
+        self.used_texture_units += 1
+
+        return texture_unit
+
+    ## ADD PARTICULAR UNITS OR BUFFER BLOCKS
+    def add_uniform_buffer(self):
+        self.used_uniform_buffers += 1
+        return self.used_uniform_buffers-1
+    
+    # RENDER
+    # Will reuse render batch cells if disposed of, via an id. The id by default is the index of the object otherwise it is inserted, the object is inserted
+    # and .render will be called
     def add_render(self, obj, id=None):
         
         if ( len ( self.available_render_batch_cells ) > 0 ):
@@ -73,7 +111,6 @@ class state:
             # else if there is an id set the id to the cell id and return it.
             self.render_batch_id[ id ] = cell_id
             return(id)
-
     # void removes the render list call if it exists.
     def remove_render(self, id):
 
@@ -88,35 +125,41 @@ class state:
         else:
             return
 
+    def render(self):
+        for i in range(0, len(self.render_batch)):
+            self.render_batch[i].render()
 
+
+    ## CAMERAS
+    def add_camera(self, camera, name):
+
+        if ( self.active_camera == None ):
+            self.active_camera = camera
+        self.camera_map[name] = camera
+
+    def activate_camera(self, camera):
+
+        self.active_camera = camera
+
+    ## EVENT HANDLERS jacked into the camera state
     def on_key_event(self, key, scancode, action, mods):
         
-        # rough event detection
-        for event_object in self.event_objects:
-            if(hasattr(event_object, 'on_key_event') and event_object.on_key_event != None):
-                event_object.on_key_event(key, action)
+        if ( self.active_camera != None ):
+            self.active_camera.on_key_event(key, action)
         return
 
     def on_mouse_move(self, x,y):
         self.mx = x
         self.my = y
-        
-        
 
-        #update mouse event for objects
-        for event_object in self.event_objects:
-            if(hasattr(event_object, 'on_mouse_move') and event_object.on_mouse_move != None):
-                event_object.on_mouse_move(x,y)
-
-        return
-
-    def on_left_click(self, button, action, mods):
-        for event_object in self.event_objects:
-            if(hasattr(event_object, 'on_left_click') and event_object.on_left_click != None):
-                event_object.on_left_click()
-        return
-
-    def add_uniform_buffer(self):
-        self.used_uniform_buffers += 1
-        return self.used_uniform_buffers-1
+        if ( self.active_camera != None ):
+            self.active_camera.on_mouse_move(x,y)
     
+    
+    ## TIME RELATED
+    def update_time(self, time):
+        self.delta_time = time-self.time
+        self.time = time
+
+
+
