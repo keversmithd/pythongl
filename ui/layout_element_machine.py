@@ -15,9 +15,9 @@ from shaders.UniformBuffer import UniformBuffer
 # Generate Element Unit
 class layout_style:
     def __init__(self):
-        self.container=(-0.5,-0.5,1,1)
+        self.container=(0.0,0.0,1,1)
         self.parent_container=(-1,-1,1,1)
-        self.relation=(0,0,0,0)
+        self.relation=(1,0,0,0)
         self.color=(1,0,0,1)
         return
 
@@ -36,6 +36,9 @@ class layout_style_dataclass:
         self.data = np.zeros(self.dataclass_size*size, dtype=np.float32)
         # Store the currently allocated number of dataclasses
         self.data_allocated = self.dataclass_size*size
+
+        # Current size
+        self.capacity = size
 
         # Current push back unit for inner array.
         self.tail = 0
@@ -56,9 +59,9 @@ class layout_style_dataclass:
     # Resize the data if neccecary
     def resize(self):
         
-
-        self.data = np.resize(  self.data, (1,max(0,self.data_allocated*2)))
-        self.data_allocated = (1,max(0,self.data_allocated*2))
+        self.data = np.resize(  self.data, max(1,self.data_allocated*2))
+        self.capacity = self.capacity*2
+        self.data_allocated = max(1,self.data_allocated*2)
 
     def set_container(self, id, value):
 
@@ -97,6 +100,9 @@ class layout_style_dataclass:
         self.data[offset_index + (self.tail*self.dataclass_size)+3] = value[3]
 
     def push(self, style):
+
+        if ( self.tail >= self.capacity ):
+            self.resize()
 
         element_id = self.tail
 
@@ -210,6 +216,35 @@ class layout_element_machine:
 
         }
 
+        vec3 relative_to_origin(vec4 container, vec4 parent_container)
+        {
+            vec3 p_x = vec3( parent_container.z-parent_container.x, 0, 0  );
+            vec3 p_y = vec3( 0, parent_container.w-parent_container.y, 0 );
+            vec3 p_o = vec3( parent_container.x, parent_container.y, 0 );
+
+            if ( gl_VertexID % 4 == 0 )
+            {
+                return p_o + (p_x*container.x) + (p_y*container.y);
+            }
+            if ( gl_VertexID % 4 == 1 )
+            {
+                return p_o + (p_x*container.z) + (p_y*container.y);
+            }
+            if ( gl_VertexID % 4 == 2 )
+            {
+                return p_o + (p_x*container.z) + (p_y*container.w);
+            }
+            if ( gl_VertexID % 4 == 3 )
+            {
+                return p_o + (p_x*container.x) + (p_y*container.w);
+            }
+
+        }
+
+        out vertex_data {
+            vec4 color;
+        } out_data;
+
         void main()
         {
             // Unpack the element
@@ -226,7 +261,15 @@ class layout_element_machine:
             {
                 pos = relative_to_center(element_container, element_parent_container);
             }
-            
+            if ( relation.x == 1 )
+            {
+                pos = relative_to_origin(element_container, element_parent_container);
+            }
+
+        
+            // Submit outdata for the color of the layout element.
+            out_data.color = color;
+
             gl_Position = vec4(pos, 1.0);
         }
 
@@ -235,10 +278,16 @@ class layout_element_machine:
         fragment_shader = '''
         #version 460 core
 
+        in vertex_data {
+
+            vec4 color;
+        } in_data;
+
+
         out vec4 color;
         void main()
         {
-            color = vec4(1,1,1,1);
+            color = in_data.color;
         }
         '''
 
@@ -259,7 +308,7 @@ class layout_element_machine:
         self.element_count += 1
         self.uniform_buffer_needsUpdate = True
 
-    def draw(self):
+    def render(self):
 
         if ( self.uniform_buffer_needsUpdate == True ):
             self.style_uniform_buffer.set_buffer(self.style_dataclass.data)

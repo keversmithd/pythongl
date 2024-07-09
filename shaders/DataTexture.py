@@ -275,7 +275,7 @@ class DataTexture :
     def full_update(self):
         if ( self.texture_options["dimension"] == "1D" ):
             glBindTexture(GL_TEXTURE_1D, self.texture_obj)
-            glTexImage1D(GL_TEXTURE_1D, 0, self.texture_options["format"], self.width, 0, self.texture_options["format"], self.texture_options["type"], self.data)
+            glTexImage1D(GL_TEXTURE_1D, 0, self.texture_options["internal_format"], self.width, 0, self.texture_options["format"], self.texture_options["type"], self.data)
             
             glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, self.texture_options["wrap_s"])
             glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, self.texture_options["wrap_t"])

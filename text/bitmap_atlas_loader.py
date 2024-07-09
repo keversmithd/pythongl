@@ -29,6 +29,9 @@ class bitmap_atlas:
         self.char_ranges = char_ranges
         self.atlas_texture = atlas_texture
 
+        # information for max normalized height for baseline
+        self.max_norm_height = 0.0
+
 
 # bitmap atlas loader generates a bitmap atals as specified above.
 class bitmap_atlas_loader:
@@ -48,6 +51,8 @@ class bitmap_atlas_loader:
         self.font_size = font_size
         self.atlas_name = atlas_name
         self.state = state
+
+        # store the max norm height of the texture atlas
 
         self.make_atlas()
 
@@ -104,6 +109,7 @@ class bitmap_atlas_loader:
         glBindTexture(GL_TEXTURE_2D, 0)
 
         atlas = bitmap_atlas(self.charmap, self.char_ranges, atlas_texture)
+        atlas.max_norm_height = self.max_norm_height
 
         self.state.add_texture_atlas(self.atlas_name, atlas)
 
@@ -128,7 +134,10 @@ class bitmap_atlas_loader:
         
         face.set_char_size( 48*64 )
         
+        
 
+        # define the max norm height
+        self.max_norm_height = 0.0
     
         cursor_details = [self.horizontal_margin,self.vertical_margin]
         row_details = [0,0]
@@ -170,6 +179,10 @@ class bitmap_atlas_loader:
                         (face.glyph.bitmap_left)/self.resolution[0],
                         (face.glyph.bitmap_top-bitmap.rows)/self.resolution[1],
                     ]
+
+                    self.max_norm_height = max(bitmap.rows/self.resolution[1], self.max_norm_height)
+
+                    
 
                 inserted = self.insert_bitmap(cursor_details, bitmap, row_details)
                 

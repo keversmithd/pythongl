@@ -31,7 +31,6 @@ class text:
         # choose the color of the text here.
         self.color = [0.0, 0.0, 0.0, 0.0]
 
-
         # reference to the text_managerowner
         # for updating on the fly with the indexes into the individual characters
         # format bounding container, parent container, uvs, color -- in sequence per character
@@ -95,7 +94,7 @@ class text_machine:
 
         # Generate the mesh
         self.element_buffer = InterleavedElementBuffer({
-            "position" : 3
+            "position" : 3,
         })
         self.make_mesh()
 
@@ -196,14 +195,14 @@ class text_machine:
 
         void main()
         {
-            // Get the 
-            int uv = gl_InstanceID*style_size;
+            // Find the text_index for the styles submission
+            int text_index = gl_InstanceID*style_size;
             
             // According to the format the the style itself.
-            vec4 container = texelFetch(styles, uv, 0);
-            vec4 parent_container = texelFetch(styles, uv+1, 0);
-            vec4 color = texelFetch(styles, uv+2, 0);
-            vec4 uvs = texelFetch(styles, uv+3, 0);
+            vec4 container = texelFetch(styles, text_index, 0);
+            vec4 parent_container = texelFetch(styles, text_index+1, 0);
+            vec4 color = texelFetch(styles, text_index+2, 0);
+            vec4 uvs = texelFetch(styles, text_index+3, 0);
 
             vec3 transformation = transform_position( parent_container, container );
 
@@ -211,7 +210,6 @@ class text_machine:
             out_data.color = color;
            
             out_data.uv = get_uv(uvs);
-
 
             gl_Position = vec4(transformation, 1.0);
         }
@@ -238,7 +236,7 @@ class text_machine:
         {
 
             float text_distance = texture(atlas, in_data.uv).x;
-            color = vec4( text_distance, text_distance, 1.0, 1.0);
+            color = vec4(  text_distance, text_distance, 1.0, 1.0);
         }
 
         '''
@@ -258,8 +256,11 @@ class text_machine:
         self.element_buffer.allocate(4)
 
         self.element_buffer.push("position", [-1,-1,0])
+
         self.element_buffer.push("position", [1,-1,0])
+
         self.element_buffer.push("position", [1,1,0])
+
         self.element_buffer.push("position", [-1,1,0])
 
         self.element_buffer.push_index([0,1,2,0,2,3], 6)
@@ -311,6 +312,98 @@ class text_machine:
                 cursor[0] += width
 
         return     
+
+    # add methods for different anchor options
+    def baseline_anchor(self, cursor, vert_advance, width, height):
+
+        bounding_container = [ cursor[0], cursor[1]+vert_advance, cursor[0]+width, cursor[1]+height+vert_advance ]
+
+        return bounding_container
+
+    # function to expand bounding container based on used bounding container
+    def expand_container(self, expanding, reference):
+
+        expanding[0] = min(expanding[0], reference[0])
+        expanding[1] = min(expanding[1], reference[1])
+        expanding[2] = max(expanding[2], reference[2])
+        expanding[3] = max(expanding[3], reference[3])
+
+    # push text with designated bounding container, and word wrap options
+    def push_text(self, text_object, limit_container, word_wrap):
+
+        # set the text manager to be itself.
+        text_object.text_manager = self
+
+        # gather the max height of the row
+        max_row_height = 0
+
+        # gather max norm height
+        max_norm_height = self.atlas.max_norm_height
+
+        # current location withought anchor context
+        cursor = [text_object.location[0], text_object.location[1]-max_norm_height*text_object.fontSize]
+
+        # want to gather the bounding container of the content
+        content_container = [1000,1000,-1000,-100]
+
+        # iterate through the text object text.
+        for c in range(0, len(text_object.text)):
+
+            # get the character from the text object
+            character = text_object.text[c]
+            character_ord = ord(character)
+
+            # declare the font size of the character
+            fontSize = text_object.fontSize
+
+            #access the atlas
+            if ( character_ord in self.atlas.charmap ):
+
+                char_detail = self.atlas.charmap[character_ord]
+                lower_u = char_detail[0]
+                lower_v = char_detail[1]
+                upper_u = char_detail[2]
+                upper_v = char_detail[3]
+                width = char_detail[4]
+                height = char_detail[5]
+                horz_advance = char_detail[6]
+                vert_advance = char_detail[7]
+
+                # set the max row height
+                max_row_height = max(height,max_row_height)
+
+                # if the word will wrap over the limit container, then submit to the lower text limit
+                if ( word_wrap == True and cursor[0]+horz_advance+width >= limit_container[2] ):
+                    cursor[0] = limit_container[0]+horz_advance
+                    cursor[1] -= max_norm_height*text_object.fontSize
+                    max_row_height = 0
+
+                cursor[0] += horz_advance
+
+                # build the bounding container around the baseline unit
+                bounding_container = self.baseline_anchor(cursor, vert_advance*fontSize, width*fontSize, height*fontSize)
+                
+                # expand the content container
+                self.expand_container( content_container, bounding_container )
+
+                # the head of the character chunk will be stored and added to the text object.
+                id0 = self.text_data.push_vector( bounding_container )
+                id1 = self.text_data.push_vector( [0.0, 0.0, 1.0, 1.0] )
+                id2 = self.text_data.push_vector( [1.0, 1.0, 1.0, 1.0] )
+                id3 = self.text_data.push_vector( [lower_u, lower_v, upper_u, upper_v ])
+
+                text_object.group_id.append(id0)
+                text_object.group_id.append(id1)
+                text_object.group_id.append(id2)
+                text_object.group_id.append(id3)
+
+                self.char_count += 1
+
+                cursor[0] += width
+
+
+
+        return content_container
 
     # group id semantics
     def update_group_id(self, text_object):

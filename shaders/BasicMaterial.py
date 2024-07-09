@@ -39,7 +39,7 @@ class BasicMaterial:
             void main()
             {
                 o_uv = uv;
-                gl_Position = view*projection*vec4(position, 1.0);
+                gl_Position = projection*view*vec4(position, 1.0);
 
             }
 

@@ -27,6 +27,24 @@ class cube_geometry:
 
         self.element_buffer.allocate(24)
 
+        self.element_buffer.push("position", [ -1.0, -1.0, -1.0 ] )
+        self.element_buffer.push("normal", [ 0.0, 0.0, -1.0 ] )
+        self.element_buffer.push("uv", [ 0.0, 0.0 ] )
+
+        self.element_buffer.push("position", [ 1.0, -1.0, -1.0 ] )
+        self.element_buffer.push("normal", [ 0.0, 0.0, -1.0 ] )
+        self.element_buffer.push("uv", [ 1.0, 0.0 ] )
+
+        self.element_buffer.push("position", [ 1.0, 1.0, -1.0 ] )
+        self.element_buffer.push("normal", [ 0.0, 0.0, -1.0 ] )
+        self.element_buffer.push("uv", [ 1.0, 1.0 ] )
+
+        self.element_buffer.push("position", [ -1.0, 1.0, -1.0 ] )
+        self.element_buffer.push("normal", [ 0.0, 0.0, -1.0 ] )
+        self.element_buffer.push("uv", [ 0.0, 1.0 ] )
+
+        self.element_buffer.push_index([0,1,2,0,2,3], 4)
+
         self.element_buffer.push("position", [ -1.0, -1.0, 0.0 ] )
         self.element_buffer.push("normal", [ 0.0, 0.0, 1.0 ] )
         self.element_buffer.push("uv", [ 0.0, 0.0 ] )
@@ -43,29 +61,14 @@ class cube_geometry:
         self.element_buffer.push("normal", [ 0.0, 0.0, 1.0 ] )
         self.element_buffer.push("uv", [ 0.0, 1.0 ] )
 
-        self.element_buffer.push_index([0,1,2,0,2,3], 6)
+        self.element_buffer.push_index([0,1,2,0,2,3], 4)
 
-        self.element_buffer.push("position", [ -1.0, -1.0, -1.0 ] )
-        self.element_buffer.push("normal", [ 0.0, 0.0, -1.0 ] )
-        self.element_buffer.push("uv", [ 0.0, 0.0 ] )
-        self.element_buffer.push("position", [ 1.0, -1.0, -1.0 ] )
-        self.element_buffer.push("normal", [ 0.0, 0.0, -1.0 ] )
-        self.element_buffer.push("uv", [ 1.0, 0.0 ] )
-        self.element_buffer.push("position", [ 1.0, 1.0, -1.0 ] )
-        self.element_buffer.push("normal", [ 0.0, 0.0, -1.0 ] )
-        self.element_buffer.push("uv", [ 1.0, 1.0 ] )
-        self.element_buffer.push("position", [ -1.0, 1.0, -1.0 ] )
-        self.element_buffer.push("normal", [ 0.0, 0.0, -1.0 ] )
-        self.element_buffer.push("uv", [ 0.0, 1.0 ] )
+        
 
-
-
-        self.element_buffer.push_index([0,1,2,0,2,3], 6)
-
-        self.element_buffer.push("position", [ -1.0, 1.0, 1.0 ] )
+        self.element_buffer.push("position", [ -1.0, 1.0, 0 ] )
         self.element_buffer.push("normal", [ 0.0, 1.0, 0.0 ] )
         self.element_buffer.push("uv", [ 0.0, 0.0 ] )
-        self.element_buffer.push("position", [ 1.0, 1.0, 1.0 ] )
+        self.element_buffer.push("position", [ 1.0, 1.0, 0 ] )
         self.element_buffer.push("normal", [ 0.0, 1.0, 0.0 ] )
         self.element_buffer.push("uv", [ 1.0, 0.0 ] )
         self.element_buffer.push("position", [ 1.0, 1.0, -1.0 ] )
@@ -77,12 +80,12 @@ class cube_geometry:
 
 
 
-        self.element_buffer.push_index([0,1,2,0,2,3], 6)
+        self.element_buffer.push_index([0,1,2,0,2,3], 4)
 
-        self.element_buffer.push("position", [ -1.0, -1.0, 1.0 ] )
+        self.element_buffer.push("position", [ -1.0, -1.0, 0 ] )
         self.element_buffer.push("normal", [ 0.0, -1.0, 0.0 ] )
         self.element_buffer.push("uv", [ 0.0, 0.0 ] )
-        self.element_buffer.push("position", [ 1.0, -1.0, 1.0 ] )
+        self.element_buffer.push("position", [ 1.0, -1.0, 0 ] )
         self.element_buffer.push("normal", [ 0.0, -1.0, 0.0 ] )
         self.element_buffer.push("uv", [ 1.0, 0.0 ] )
         self.element_buffer.push("position", [ 1.0, -1.0, -1.0 ] )
@@ -94,39 +97,39 @@ class cube_geometry:
 
 
 
-        self.element_buffer.push_index([0,1,2,0,2,3], 6)
+        self.element_buffer.push_index([0,1,2,0,2,3], 4)
 
-        self.element_buffer.push("position", [ -1.0, -1.0, -1.0 ] )
-        self.element_buffer.push("normal", [ -1.0, 0.0, 0.0 ] )
-        self.element_buffer.push("uv", [ 0.0, 0.0 ] )
-        self.element_buffer.push("position", [ -1.0, -1.0, 1.0 ] )
-        self.element_buffer.push("normal", [ -1.0, 0.0, 0.0 ] )
-        self.element_buffer.push("uv", [ 1.0, 0.0 ] )
-        self.element_buffer.push("position", [ -1.0, 1.0, 1.0 ] )
-        self.element_buffer.push("normal", [ -1.0, 0.0, 0.0 ] )
-        self.element_buffer.push("uv", [ 1.0, 1.0 ] )
-        self.element_buffer.push("position", [ -1.0, 1.0, -1.0 ] )
-        self.element_buffer.push("normal", [ -1.0, 0.0, 0.0 ] )
-        self.element_buffer.push("uv", [ 0.0, 1.0 ] )
+        # self.element_buffer.push("position", [ -1.0, -1.0, -1.0 ] )
+        # self.element_buffer.push("normal", [ -1.0, 0.0, 0.0 ] )
+        # self.element_buffer.push("uv", [ 0.0, 0.0 ] )
+        # self.element_buffer.push("position", [ -1.0, -1.0, 0 ] )
+        # self.element_buffer.push("normal", [ -1.0, 0.0, 0.0 ] )
+        # self.element_buffer.push("uv", [ 1.0, 0.0 ] )
+        # self.element_buffer.push("position", [ -1.0, 1.0, 0 ] )
+        # self.element_buffer.push("normal", [ -1.0, 0.0, 0.0 ] )
+        # self.element_buffer.push("uv", [ 1.0, 1.0 ] )
+        # self.element_buffer.push("position", [ -1.0, 1.0, -1.0 ] )
+        # self.element_buffer.push("normal", [ -1.0, 0.0, 0.0 ] )
+        # self.element_buffer.push("uv", [ 0.0, 1.0 ] )
 
 
 
-        self.element_buffer.push_index([0,1,2,0,2,3], 6)
+        # self.element_buffer.push_index([0,1,2,0,2,3], 4)
 
         self.element_buffer.push("position", [ 1.0, -1.0, -1.0 ] )
         self.element_buffer.push("normal", [ 1.0, 0.0, 0.0 ] )
         self.element_buffer.push("uv", [ 0.0, 0.0 ] )
-        self.element_buffer.push("position", [ 1.0, -1.0, 1.0 ] )
+        self.element_buffer.push("position", [ 1.0, -1.0, 0 ] )
         self.element_buffer.push("normal", [ 1.0, 0.0, 0.0 ] )
         self.element_buffer.push("uv", [ 1.0, 0.0 ] )
-        self.element_buffer.push("position", [ 1.0, 1.0, 1.0 ] )
+        self.element_buffer.push("position", [ 1.0, 1.0, 0 ] )
         self.element_buffer.push("normal", [ 1.0, 0.0, 0.0 ] )
         self.element_buffer.push("uv", [ 1.0, 1.0 ] )
         self.element_buffer.push("position", [ 1.0, 1.0, -1.0 ] )
         self.element_buffer.push("normal", [ 1.0, 0.0, 0.0 ] )
         self.element_buffer.push("uv", [ 0.0, 1.0 ] )
 
-        self.element_buffer.push_index([0,1,2,0,2,3], 6)
+        self.element_buffer.push_index([0,1,2,0,2,3], 4)
 
         self.element_buffer.sync_buffers()
 

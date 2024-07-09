@@ -8,6 +8,19 @@ workspace_directory = workspace_directory.rsplit('\\', 1)[0]
 sys.path.append(workspace_directory)
 from shaders.PyGLHelper import *
 
+def perspective_projection(fov, aspect_ratio, near_plane, far_plane):
+    fov_rad = np.radians(fov)
+    tan_half_fov = np.tan(fov_rad / 2.0)
+    
+    projection_matrix = np.zeros((4, 4))
+    projection_matrix[0, 0] = 1.0 / (aspect_ratio * tan_half_fov)
+    projection_matrix[1, 1] = 1.0 / tan_half_fov
+    projection_matrix[2, 2] = -(far_plane + near_plane) / (far_plane - near_plane)
+    projection_matrix[2, 3] = -1.0
+    projection_matrix[3, 2] = -(2.0 * far_plane * near_plane) / (far_plane - near_plane)
+    
+    return projection_matrix
+
 # perspective camera
 class PerspectiveCamera:
 
@@ -31,9 +44,9 @@ class PerspectiveCamera:
         ], dtype=np.float32)
 
         self.near_plane = 0.1
-        self.far_plane = 1000.0
+        self.far_plane = 100.0
 
-        self.position = np.array([0.0, 0.0, 0.0])
+        self.position = np.array([0.0, 0.0, 3.0])
         self.forward = np.array([0.0, 0.0, -1.0])
         self.up = np.array([0.0, 1.0, 0.0])
 
@@ -50,28 +63,81 @@ class PerspectiveCamera:
         a = vw/vh
         
         fov_radians = np.radians(self.fov)
-        f = 1.0 / np.tan( fov_radians/2.0 )
+        tan = np.tan( fov_radians/2.0 )
 
-        self.projection[0] = f / a
-        self.projection[5] = f
-        self.projection[10] = (self.far_plane+self.near_plane)/(self.near_plane-self.far_plane)
-        self.projection[11] = (2*self.far_plane*self.near_plane)/(self.near_plane-self.far_plane)
-        self.projection[14] = -1.0
+
+        left = -1
+        right = 1
+        top = 1
+        bottom = -1
+
+
+        # self.projection[0] = 1/(a*tan)
+        # self.projection[5] = 1/(tan)
+        # self.projection[10] = -(self.far_plane+self.near_plane)/(self.far_plane - self.near_plane)
+        # self.projection[11] = -1
+        # self.projection[14] = -(2*self.far_plane*self.near_plane)/(self.far_plane - self.near_plane)
+
+
+        # self.projection[0] = (2*self.near_plane)/(right-left)
+        # self.projection[2] = (right+left)/(right-left)
+        # self.projection[5] = (2*self.near_plane)/(top-bottom)
+        # self.projection[6] = (top+bottom)/(top-bottom)
+        # self.projection[10] = -(self.far_plane+self.near_plane)/(self.far_plane - self.near_plane)
+        # self.projection[11] = -(2*self.far_plane*self.near_plane)/(self.far_plane - self.near_plane)
+        # self.projection[14] = -1
+
+        # near = 2
+        # self.projection[0] = (near)/(right)
+        # self.projection[5] = (near)/(top)
+        # self.projection[10] = -1
+        # self.projection[11] = -(near)
+        # self.projection[14] = -1
+
+        top = tan*self.near_plane
+        right = top*a
+
+        self.projection[0] = (self.near_plane)/right
+        self.projection[5] = (self.near_plane)/top
+        self.projection[10] = -(self.far_plane+self.near_plane)/(self.far_plane - self.near_plane)
+        self.projection[11] = -1
+        self.projection[14] = -(2*self.far_plane*self.near_plane)/(self.far_plane - self.near_plane)
+        self.projection[15] = 0
+
+        # left = -1
+        # right = 1
+        # top = 1
+        # bottom = -1
+
+        # self.projection[0] = (2*right)/(right-left)
+        # self.projection[3] = -(right+left)/(right-left)
+        # self.projection[5] = (2*top)/(top-bottom)
+        # self.projection[7] = -(top+bottom)/(top-bottom)
+        # self.projection[10] = -2/(self.far_plane-self.near_plane)
+        # self.projection[11] = -(self.far_plane+self.near_plane)/(self.far_plane-self.near_plane)
+        # self.projection[15] = 1
+
+        #self.projection = perspective_projection(45, 800/600, 0.1, 100.0)
+
 
     def update_view_matrix(self):
 
-        f = self.forward/np.linalg.norm(self.forward)
-        r = np.cross(f, self.up)
-        u = np.cross(r,f)
-        
-        #print(r)
+        f = self.forward
+        f = f/np.linalg.norm(f)
 
-        d0  = -np.dot(r, self.position)
+        r = np.cross( f, self.up )
+        r = r/np.linalg.norm(r)
+        u = np.cross(r, f)
+        
+        # print(f)
+        # print(r)
+        # print(u)
+
+        d0  = -np.dot( r, self.position)
         d1 = -np.dot(u, self.position)
         d2 = np.dot(f, self.position)
 
         
-
         self.view[0] = r[0]
         self.view[1] = u[0]
         self.view[2] = -f[0]
@@ -87,10 +153,10 @@ class PerspectiveCamera:
         self.view[10] = -f[2]
         self.view[11] = 0.0
 
-        self.view[12] = -np.dot(r, self.position)
-        self.view[13] = -np.dot(u, self.position)
-        self.view[14] = np.dot(f, self.position)
-        self.view[15] = 1.0
+        self.view[12] = d0
+        self.view[13] = d1
+        self.view[14] = d2
+        #self.view[15] = 1.0
         
 
         #self.view[4] = 0.0
@@ -122,10 +188,15 @@ class PerspectiveCamera:
         dx = (x/self.state.vw)-self.previous_mouse_x
         dy = (y/self.state.vh)-self.previous_mouse_y
 
-        print(dx,dy)
+        nx = (x/self.state.vw)
+        ny = (y/self.state.vh)
 
-        self.forward[0] += dx*3.0
-        self.forward[1] += dy*3.0
+        # self.forward[0] = 0
+        # self.forward[1] = 0
+        # self.forward[2] = -1
+
+        self.forward[0] += dx
+        self.forward[1] -= dy
 
         self.previous_mouse_x = (x/self.state.vw)
         self.previous_mouse_y = (y/self.state.vh)
@@ -134,22 +205,26 @@ class PerspectiveCamera:
 
     def on_key_event(self, key, action):
 
-        f = self.forward/np.linalg.norm(self.forward)
+        f = np.subtract(self.forward, self.position)
+        f = f/np.linalg.norm(f)
+        r = np.cross( self.up, f)
+        r = r/np.linalg.norm(r)
+
         delta_time = self.state.delta_time
-        movement_speed = 3.0
+        movement_speed = 20.0
+
         if ( key == glfw.KEY_W ):
-            self.position[0] -= f[0]*movement_speed*delta_time
-            self.position[1] += f[1]*movement_speed*delta_time
-            self.position[2] += f[2]*movement_speed*delta_time
+            self.position[2] -= movement_speed*delta_time
         if ( key == glfw.KEY_S ):
-            self.position[0] -= f[0]*movement_speed*delta_time
-            self.position[1] -= f[1]*movement_speed*delta_time
-            self.position[2] -= f[2]*movement_speed*delta_time
+            self.position[2] += movement_speed*delta_time
         if ( key == glfw.KEY_A ):
             self.position[0] -= movement_speed*delta_time
         if ( key == glfw.KEY_D ):
             self.position[0] += movement_speed*delta_time
+
         
+        print(self.position)
+
         self.update_view_matrix()
 
             

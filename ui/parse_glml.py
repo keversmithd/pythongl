@@ -6,9 +6,20 @@ class glml_node:
     attributes = None
 
     def __init__(self,element_title, attributes):
+
+        if ( "display" not in attributes ):
+            attributes["display"] = "block"
+
         self.attributes = attributes
         self.element_title = element_title
+        self.textContent = ""
         self.children = []
+        self.hasText = False
+
+        
+
+        # store internal state information regarding sizing, padding, layout and offset
+        
         return
 
 class glml_parse_state:
@@ -30,6 +41,11 @@ class glml_parse_state:
         # may want the tree to be a node
         self.root = None
         self.current_node = None
+
+        # map of defaults 
+        self.node_defaults = {
+            "display" : "block"
+        }
 
         return
 
@@ -66,7 +82,7 @@ def enlist_element(state_ptr):
 def recognize_element(element_title, state_ptr):
 
     recognized_elements = {"el":0}
-    recognized_attributes = {0: {"box":["","","",""],"width":"","height":"","color":["","","",""],"id":"", "text":""} }
+    recognized_attributes = {0: {"box":["","","",""],"width":"","height":"","color":["","","",""],"id":"", "text":"", "display": "block"} }
 
     state = state_ptr[0]
 
@@ -90,22 +106,40 @@ def get_attribute_parameter(attribute_title, state_ptr):
 
 
     # model absorb things between common delimiters
-    acceptable_open_delimeters = {"{", "("}
-    acceptable_close_delimeters = {"}",")"}
+    acceptable_open_delimeters = {"{", "(", "\""}
+    acceptable_close_delimeters = {"}",")", "\""}
     acceptable_element_delimeters = {","}
 
     open = False
 
     attribute_index = 0
 
+    # Indicates the attribute is singular and not an array
+    singular = False
+
+    if (state.parsing_content[state.parse_index] in acceptable_open_delimeters and state.parsing_content[state.parse_index] in acceptable_close_delimeters ):
+        state.parse_index += 1
+        singular = True
+        
+        open = True
+
+        if ( attribute_title in state.node_defaults ):
+            state.currently_attributing_element[attribute_title] = ""
+
+    
+
     while( state.parse_index < state.parsing_content_length and state.parsing_content[state.parse_index] not in acceptable_close_delimeters ):
         
-        if ( open == True and attribute_index < len(state.currently_attributing_element[attribute_title]) ):
-            state.currently_attributing_element[attribute_title][attribute_index] += state.parsing_content[state.parse_index]
-        if ( state.parsing_content[state.parse_index] in acceptable_open_delimeters and open == False):
-            open = True
         if ( state.parsing_content[state.parse_index] in acceptable_element_delimeters ):
             attribute_index += 1
+        elif ( state.parsing_content[state.parse_index] in acceptable_open_delimeters and open == False):
+            open = True
+        elif ( singular == False and open == True and attribute_title in state.currently_attributing_element ):
+            state.currently_attributing_element[attribute_title][attribute_index] += state.parsing_content[state.parse_index]
+        elif ( open == True and attribute_title in state.currently_attributing_element and singular == True ):
+            state.currently_attributing_element[attribute_title] += state.parsing_content[state.parse_index]
+            singular = True
+       
         
         state.parse_index += 1
 
@@ -170,8 +204,6 @@ def parse_element(state_ptr):
 
     potential_element_title, token_stopped_at = get_attribute_title(state_ptr)
 
-
-
     if ( token_stopped_at == "/"):
         # if there is the slash in the preamble then please close the current element, i guess disregard the name
         # for now
@@ -182,7 +214,7 @@ def parse_element(state_ptr):
         return
         
     else:
-        if ( not recognize_element(potential_element_title, state_ptr) ) : recognize_element("el")
+        if ( not recognize_element(potential_element_title, state_ptr) ) : recognize_element("el", state_ptr)
 
     # after this we want to get more attribute titles and then absorb their content
     while(state.parse_index < state.parsing_content_length):
@@ -206,30 +238,40 @@ def handle_token(state_ptr):
     unit_token = state.parsing_content[state.parse_index]
 
     special_characters = {"<":parse_element}
+    restricted_tokens = {"\n", "\t"}
 
     if ( unit_token in special_characters ):
         special_characters[unit_token](state_ptr)
     else:
         #add text content to the current attributing node
-        if(state.currently_attributing_element != None):
-            state.currently_attributing_element["text"] += unit_token
+        if(state.currently_attributing_element != None and state.current_node != None and unit_token not in restricted_tokens):
+
+            # determine if the current node has text or not
+            if ( unit_token != ' '):
+                state.current_node.hasText = True
+
+            state.current_node.textContent += unit_token
+        state.parse_index += 1
     
     return
 
 def parse_glml(ui):
-
+    
     #set parse state
     state = glml_parse_state(0, ui)
+
+    # set the root as the god node
+    state.root = glml_node("god", {})
+    state.current_node = state.root
 
     # text length
     while(state.parse_index < state.parsing_content_length):
 
         handle_token([state])
 
-        state.parse_index += 1
+        #state.parse_index += 1
 
     return state
-
 
 def print_attributes(node):
     
@@ -237,7 +279,6 @@ def print_attributes(node):
         
         print(attr, ": ", node.attributes[attr])
             
-
 def traverse_state(root):
     
     if (root == None):
@@ -250,7 +291,11 @@ def traverse_state(root):
         traverse_state(child)
 
 
-
+# glml_token = parse_glml('''
+# <el box=(1,1,1,1)>Parent
+#     <el id="mode">Child</>
+#     <el>Second Child</>
+# </>''')
 
 
         

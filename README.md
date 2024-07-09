@@ -1,30 +1,24 @@
-# glml transformer from pc
- transform glml state into elements
- the transformer takes the attribute data and parses it using the current graphics state
- the graphics state contains information about window size, pixel length etc
- in order to update the desired units in real time the transformer must act graphics context callbacks
- the transformer will say transform, it will make a parallel tree using the ui units which are graphics objects
- this tree will then be updated by traversing and updating the uniforms of the appropriate ui objects
-## glml transformer algorithm
- traverse tree, find conversions to ui objects by name
- update the attributes based on current state [running state object]
- and compile the objects into the tree
-## basic interaction
- need data structure for spatial partitioning, will be a normalized grid, were the event objects eject and reinster them selves, the span between the two extremas will insert into the grid, when the object is changed it will reinsert itself
- then there must be an option for sub granular detection, and z-depth
+# event system
+
+# glml transformer
+  ## description:
+    transforms glml text into the parsed tree and renders onto the screen.
+  ## glml transformer algorithm
+    depth first search, and updating inner parent offsets.
+  ## Todo
+    when the word wraps through push text in the textmachine, return information about the last location
+    during the wrap and set the local offset to that location
 
 # Layout elemement machine instanced
-
   layout_element_machine()
   .add_element({ container, parent_container, relation, color })
-
   ## to do
     border, stroke, opacity, etc.
-    
 # Text machine
-
   ideal usage
     text_id = text_machine.Text("text_machine1")
+  ## wrapped text rendering
+    how to define the line height, if the max height of the line is at unity 1.0, then everything there after is also larger.
 
 #  Buffer geometry refactoring
   ## Element Buffers (Geometry | Buffer) in ElementBuffer.py
@@ -80,6 +74,9 @@
     shader_program.uniforms.ultimate_zone = uniform_buffer.block
     
 # Text Machine
+
+  pushing_text_advanced
+
 
   realistic usage
     text = Text("hello", [0.0, 0.0, 1.0, 1.0])

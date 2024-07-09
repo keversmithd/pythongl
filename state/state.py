@@ -126,9 +126,20 @@ class state:
             return
 
     def render(self):
+
         for i in range(0, len(self.render_batch)):
             self.render_batch[i].render()
 
+    # ADD TEXT INSTANCE MACHINE
+    def add_text_machine(self, machine):
+
+        self.text_machine = machine
+        self.add_render(self.text_machine)
+    
+    # ADD BOX INSTANCE MACHINE
+    def add_element_machine(self, machine):
+        self.element_machine = machine
+        self.add_render(self.element_machine)
 
     ## CAMERAS
     def add_camera(self, camera, name):
@@ -154,7 +165,6 @@ class state:
 
         if ( self.active_camera != None ):
             self.active_camera.on_mouse_move(x,y)
-    
     
     ## TIME RELATED
     def update_time(self, time):
