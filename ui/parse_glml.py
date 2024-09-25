@@ -1,4 +1,7 @@
 
+# import copy
+import copy
+
 class glml_node:
     parent = None
     element_title = None
@@ -16,11 +19,26 @@ class glml_node:
         self.children = []
         self.hasText = False
 
+        # indicates whether the node is a math node or not.
+        self.isMath = False
+
         
 
         # store internal state information regarding sizing, padding, layout and offset
         
         return
+
+    def copy_attribute_node (self, other_node ):
+
+        self.attributes = copy.copy( other_node.attributes )
+        self.element_title = copy.copy ( other_node.element_title )
+        self.textContent = ""
+        self.children = []
+        self.hasText = False
+
+        # indicates whether the node is a math node or not.
+        self.isMath = False
+
 
 class glml_parse_state:
 
@@ -72,7 +90,7 @@ def enlist_element(state_ptr):
         state.current_node = state.root
     else:
         # create the new node
-        node = glml_node(state.current_element_title, state.currently_attributing_element)
+        node = glml_node( state.current_element_title, state.currently_attributing_element )
         # set the nodes parent to the current node
         node.parent = state.current_node
         state.current_node.children.append(node)
@@ -231,13 +249,120 @@ def parse_element(state_ptr):
 
     return
 
+def parse_math_token(state_ptr):
+
+    state = state_ptr[0]
+    state.parse_index += 1
+
+    # if the current node exists and has a parent
+        # set the current node as a child of the parent
+    
+    # inherit any inheritable attributes from the current node to the new math node
+
+    # parse the operator title 
+
+    # parse the arguments
+        # for each argument create a node 
+        # add each character of the argument to the node
+        # if math operator found, then parse the operator
+        # output as new node then set as child of the current math node
+    
+
+
+    # update in the future.
+
+    # I have to cut the current node short in order to have the correct children order, but if the current node has a specified box sizing then trying to calculate the box or the width of the height is not viable or accurate.
+
+    # State current node.
+    if ( state.current_node != None and state.current_node.parent != None ):
+        state.current_node.parent.children.append( state.current_node )
+
+        
+    # math node attribute
+    math_node_attributes = { "color":[ "","","","" ], "arguments":[] }
+
+    # inherit attributes that inherit
+    if ( "color" in state.currently_attributing_element ):
+        math_node_attributes["color"] = state.currently_attributing_element["color"]
+    
+    math_operator = ""
+
+    #strip leading white space
+    while ( state.parse_index < state.parsing_content_length and state.parsing_content[state.parse_index] == " "):
+        state.parse_index += 1
+    
+    math_argument_open_delims = { "{" }
+    math_argument_close_delims = { "}" }
+
+    # get the operator title.
+    while ( state.parse_index < state.parsing_content_length and state.parsing_content[state.parse_index] not in math_argument_open_delims and state.parsing_content[state.parse_index] not in math_argument_close_delims and state.parsing_content[state.parse_index] != " " ):
+
+        math_operator += state.parsing_content[state.parse_index]
+        state.parse_index += 1
+
+    # get the math arguments
+    math_arguments = []
+
+    #strip leading white space
+    while ( state.parse_index < state.parsing_content_length and state.parsing_content[state.parse_index] == " "):
+        state.parse_index += 1
+    
+    # get the arguments to the math node
+    if ( state.parsing_content[state.parse_index] in math_argument_open_delims ):
+
+        state.parse_index += 1
+        open = True
+
+        # store the temp argument
+        temp_argument = ""
+
+        while ( state.parse_index < state.parsing_content_length and not ( open == False and state.parsing_content[ state.parse_index ] not in math_argument_open_delims and state.parsing_content[ state.parse_index ] not in math_argument_close_delims and ord ( state.parsing_content[ state.parse_index ]) >= 33 and ord ( state.parsing_content[ state.parse_index ] ) <= 126 ) ):
+
+            if state.parsing_content [ state.parse_index] in math_argument_open_delims:
+                open = True
+            elif state.parsing_content[ state.parse_index] in math_argument_close_delims :
+                math_arguments.append( temp_argument )
+                temp_argument = ""
+                open = False
+            else:
+                temp_argument += state.parsing_content[ state.parse_index] 
+            
+            state.parse_index += 1
+
+    # create the glml node 
+    math_node = glml_node( math_operator, math_node_attributes )
+
+    
+    if ( state.current_node != None and state.current_node.parent != None ):
+
+        copy_node = glml_node("",{})
+        copy_node.copy_attribute_node ( state.current_node )
+
+        state.current_node.parent.children.append( math_node )
+
+        state.current_node = copy_node
+
+
+
+    else:
+        state.current_node = math_node
+
+    
+    #state.current_node = glml_node("math", state.currently_attributing_element )
+    
+
+    # validate name of the math token
+
+    return
+
 def handle_token(state_ptr):
     # unpack ptr
     state = state_ptr[0]
 
     unit_token = state.parsing_content[state.parse_index]
 
-    special_characters = {"<":parse_element}
+    # option to add math token.
+    special_characters = {"<":parse_element, "|":parse_math_token}
     restricted_tokens = {"\n", "\t"}
 
     if ( unit_token in special_characters ):
@@ -291,11 +416,8 @@ def traverse_state(root):
         traverse_state(child)
 
 
-# glml_token = parse_glml('''
-# <el box=(1,1,1,1)>Parent
-#     <el id="mode">Child</>
-#     <el>Second Child</>
-# </>''')
+glml_token = parse_glml('''
+<el> Hello |frac{a}{b} next after a math</>''')
 
 
         

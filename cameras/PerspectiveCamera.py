@@ -56,6 +56,12 @@ class PerspectiveCamera:
 
         self.update_projection_matrix()
 
+        # state the current projection type of the camera
+        self.projection_type = "Perspective"
+
+        # store the aspect ratio of the recently generated projection matrix.
+        self.aspect_ratio = 1
+
     def update_projection_matrix(self):
         # get current viewport width and height
         vw = self.state.vw
@@ -64,7 +70,6 @@ class PerspectiveCamera:
         
         fov_radians = np.radians(self.fov)
         tan = np.tan( fov_radians/2.0 )
-
 
         left = -1
         right = 1
@@ -104,6 +109,9 @@ class PerspectiveCamera:
         self.projection[14] = -(2*self.far_plane*self.near_plane)/(self.far_plane - self.near_plane)
         self.projection[15] = 0
 
+
+        self.aspect_ratio = a
+
         # left = -1
         # right = 1
         # top = 1
@@ -118,7 +126,6 @@ class PerspectiveCamera:
         # self.projection[15] = 1
 
         #self.projection = perspective_projection(45, 800/600, 0.1, 100.0)
-
 
     def update_view_matrix(self):
 

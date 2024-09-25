@@ -19,8 +19,14 @@ from shaders.BasicMaterial import *
 from shaders.BasicMesh import *
 from cameras.PerspectiveCamera import *
 
+# import euler object
+from math_structures.Euler import *
+
 # import the glml transformer object
 from ui.transform_glml import *
+
+# import event animation system
+from events.event_system import *
 
 def mouse_call(window, x,y):
     scene = glfw.get_window_user_pointer(window)
@@ -59,6 +65,11 @@ def create_context(scene):
     scene.add_element_machine( layout_element_machine(scene) )
     scene.add_text_machine ( text_machine(scene, "joan") )
 
+    # Setup the event animation system
+    scene.add_event_system ( EventSystem( scene ) )
+
+
+
 def main():
     # Initialize GLFW 
 
@@ -77,12 +88,15 @@ def main():
     camera = PerspectiveCamera( scene )
     scene.add_camera(camera, "fps")
 
+    # text object driver section
+
     # text_obj = text("hello")
     # text_obj.location = [-1, -0.9]
     # limiting_container = [-1, -1, 1, 1]
 
     # scene.text_machine.push_text(text_obj, limiting_container, True)
 
+    # layout element instance usage
 
     # style = layout_style()
     # style.container = (container[0], container[1], container[2], container[3])
@@ -90,17 +104,26 @@ def main():
 
     #scene.element_machine.push_element(style)
     
-    transformer = transform_glml(scene)
-    transformer.render('''
-    <el display="inline" width="0.3">
-        <el display="inline">Hello</>
-        <el>Goodbyea</>
-        <el>Hello</>
-        <el>Goodbye</>
-    </el>
-    <el>Below</>
+    # glml transformer usage
 
-    ''')
+    # transformer = transform_glml(scene)
+    # transformer.render('''
+    # <el display="inline" width="0.3">
+    #     <el display="inline">Hello</>
+    #     <el>Goodbyea</>
+    #     <el>Hello</>
+    #     <el>Goodbye</>
+    # </el>
+    # <el>Below</>
+
+    # ''')
+
+    mesh = BasicMesh ( cube_geometry(), BasicMaterial( scene ) )
+
+    scene.add_render ( mesh )
+    
+    scene.event_system.add_event ( {"object": mesh, "duration":10}, {"attribute": "position", "to": [1,0,0]})
+
 
     # Load a clear color.
     glClearColor(0.0, 0.0, 0.0, 1.0)
@@ -112,11 +135,21 @@ def main():
     
         scene.update_time( glfw.get_time() )
 
+        # update the scene with delta time.
+        scene.event_system.update( scene.delta_time )
+
         scene.render()
 
+        
+
+        #e = Euler().setFromAxisAngle([1,0,-1], 180*math.cos(scene.time))
+
+        
+        #mesh.set_euler ( e )
+
         if ( glfw.get_key(scene.window, glfw.KEY_SPACE ) ):
-            to.set_text("in")
-            to.set_position([-0.1,0.0])
+            mesh.set_position([1.0,0,0])
+            
 
         # Swap buffers and poll events
         glfw.swap_buffers(window)

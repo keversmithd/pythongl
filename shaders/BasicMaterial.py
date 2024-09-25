@@ -21,8 +21,17 @@ class BasicMaterial:
 
         self.make_program()
 
-    def make_program(self):
 
+    # function to set the model matrix of the underlying program
+    def set_model_matrix ( self, model_matrix ):
+
+        self.program.set_uniform ( "model", "mat4", model_matrix )
+
+    def uniforms_need_update(self):
+
+        self.program.uniforms_need_update = True
+
+    def make_program(self):
 
         vertex_shader = '''
             #version 460 core
@@ -31,6 +40,7 @@ class BasicMaterial:
             layout(location = 1) in vec3 normal;
             layout(location = 2) in vec2 uv;
         
+            uniform mat4 model;
             uniform mat4 projection;
             uniform mat4 view;
 
@@ -39,8 +49,7 @@ class BasicMaterial:
             void main()
             {
                 o_uv = uv;
-                gl_Position = projection*view*vec4(position, 1.0);
-
+                gl_Position = projection*view*model*vec4(position, 1.0);
             }
 
         '''
@@ -60,10 +69,12 @@ class BasicMaterial:
 
         '''
 
+
+
         self.program = ShaderProgram({
             "vertex_shader" : vertex_shader,
             "fragment_shader" : fragment_shader,
-            "camera" : [ self.state.active_camera ]
+            "camera" : [ self.state.active_camera ],
         })
     
     

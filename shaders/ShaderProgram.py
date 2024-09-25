@@ -20,7 +20,7 @@ class ShaderProgram():
         if ( "uniforms" in program_options ):
             self.uniforms = program_options["uniforms"]
         else:
-            self.uniforms = None
+            self.uniforms = {}
 
         self.create_program(program_options)
 
@@ -32,18 +32,21 @@ class ShaderProgram():
             "uniform buffer" : self.uniform_buffer,
             "texture1D" : self.uniform_texture1D,
             "texture2D" : self.uniform_texture2D,
-            "DataTexture" : self.uniform_data_texture
+            "DataTexture" : self.uniform_data_texture,
+            "mat4" : self.uniform_mat4,
         }
 
         self.active_camera = None
 
         if ( "camera" in program_options ):
             self.active_camera = program_options["camera"]
-          
+
+
         return
 
     # Uniform data texture has the value pegged at a DataTexture object so that it can be updated if needed as well as encompasses all dimensional types
     def uniform_data_texture(self, uniform_name, value):
+    
         location = glGetUniformLocation(self.program, uniform_name)
         if(location == -1 or location == 4294967295):
             print("Uniform location not found!")
@@ -55,7 +58,6 @@ class ShaderProgram():
         glActiveTexture(GL_TEXTURE0 + value.texture_unit)
         glBindTexture( value.texture_bind, value.texture_obj)
         glUniform1i( location, value.texture_unit )
-
 
     # Uniform type handlers
     def uniform_int(self, uniform_name, value):
@@ -116,8 +118,6 @@ class ShaderProgram():
         
         glUniformMatrix4fv(location, 1, GL_FALSE, value)
 
-
-
     def create_program(self,program_options):
 
         if program_options["vertex_shader"] == None or program_options["fragment_shader"] == None:
@@ -162,9 +162,13 @@ class ShaderProgram():
 
         self.program = compileProgram(*shader_list)
 
-    def set_uniform(uniform_name, uniform_type, value):
-        self.uniforms[uniform_name].type = uniform_type
-        self.uniforms[uniform_name].value = value
+    def set_uniform(self, uniform_name, uniform_type, value):
+
+        if  ( uniform_name not in self.uniforms ):
+            self.uniforms[uniform_name] = {}
+
+        self.uniforms[uniform_name]["type"] = uniform_type
+        self.uniforms[uniform_name]["value"] = value
         self.uniforms_need_update = True
 
     # call when wanting to retrieve the latest activate camera projection and view etcs, and upload it to the program!

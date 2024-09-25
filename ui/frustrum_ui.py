@@ -1,22 +1,11 @@
-import os
-import sys
-import random
 
-workspace_directory = os.path.dirname(os.path.realpath(__file__))
-workspace_directory = workspace_directory.rsplit('\\', 1)[0]
-sys.path.append(workspace_directory)
+import math
+import numpy as np
+# Takes document tree and applies the same principle as the glml transformer but applies it to the bases of the frustrum
 
-# import the dequeue module.
-from collections import deque
+# use seperate build info class and share for future correctness.
 
-from parse_glml import *
-from state.state import *
-
-# Import the ui element machine in order to communicate and generate some layout ui elements
-from ui.layout_element_machine import *
-from text.text_machine import *
-
-class build_info:
+class frustrum_build_info:
 
     def __init__(self, width, height, container):
 
@@ -26,16 +15,15 @@ class build_info:
         self.offset_x = 0
         self.offset_y = 0
 
-        
-
-class transform_glml:
+class frustrum_ui:
 
     def __init__(self, state):
+
         # set the state up correctly.
         self.state = state
 
-        # set the global container
-        self.global_container = [-1, -1, 1, 1]
+        # define the global container
+        self.global_container = [0,0,1,1]
 
         # map for how to handle pre offsets based on display
         self.pre_offset_map = {
@@ -49,16 +37,59 @@ class transform_glml:
             "inline" : self.post_inline_offset,
         }
 
-        # map for expanding
+        # define the frustrum details
+        self.frustrum_origin = None
+        self.frustrum_right = None
+        self.frustrum_up = None
+
+        # define the frustrum in terms of its big boy status.
+        self.update_frustrum()
+
+        
 
         return
 
-    # takes a glml string builds the document tree and then transforms/renders the output
-    def render(self, glml_string ):
-        # get the document tree state from parse_glml
-        document_tree = parse_glml(glml_string)
-        # then transform or add.
-        self.transform(document_tree)
+        
+    # update the frustrum.
+    def update_frustrum(self):  
+
+        if ( self.state.active_camera == None ):
+            return
+
+        if ( self.state.active_camera.projection_type == "Perspective" ):
+
+            # get the projective attributes from the camera
+            fov = self.state.active_camera.fov
+            near = self.state.active_camera.near_plane
+            
+            # get the aspect ratio
+            a = self.state.active_camera.aspect_ratio
+
+            # find
+            tanHalfFov = math.tan( math.radians(fov/2) )
+
+            halfWidth = (tanHalfFov*near)
+            halfHeight = halfWidth*a
+
+            forward = self.state.active_camera.forward
+            forward = forward/np.linalg.norm(forward)
+            right = np.cross( forward, self.state.active_camera.up )
+            right = right/np.linalg.norm(right)
+            up = np.cross( forward, right )
+            up = up/np.linalg.norm(up)
+
+            camera_position = self.state.active_camera.position
+
+            frustrum_origin = np.add ( camera_position, forward*near )
+            frustrum_origin = np.subtract (frustrum_origin, right*halfWidth )
+
+            self.frustrum_origin = np.add ( frustrum_origin, up*halfHeight )
+
+            self.frustrum_width = halfWidth*2.0
+            self.frustrum_height = halfHieght*2.0
+
+            self.frustrum_up = up
+            self.frustrum_right = right
 
     def transform( self, document_tree ):
         # traverse document_tree
@@ -68,7 +99,7 @@ class transform_glml:
         root = document_tree.root
         # check if the root is null
         if ( root == None ):
-            print("TRANSFORM_GLML: Bad root")
+            print("FRUSTRUM_UI: Bad root")
             return
 
         # create a god node and set the roots parent as this.
@@ -76,6 +107,7 @@ class transform_glml:
 
             
         return
+
 
     # determine the pre container, calculated height, calculated width etc.
     def pre_container(self,node):
@@ -88,6 +120,10 @@ class transform_glml:
 
             # calculate the mask container change the mask container depending on anchor
             mask_container = [0,0,1,1]
+
+            # calculate the dx and dy of the parent container.
+            pdx = self.global_container[2] - self.global_container[0]
+            pdy = self.global_container[3] - self.global_container[1]
 
             if ( "width" in node.attributes ):
                 width = node.attributes["width"]
@@ -120,14 +156,7 @@ class transform_glml:
                 ly = float ( node.attributes["position"][1] )
             
         
-            # calculate the dx and dy of the parent container.
-            pdx = (self.global_container[2] - self.global_container[0])
-            pdy = (self.global_container[3] - self.global_container[1])
-
-            # update calculated node height as sub portion of the parent container
-            node.calculated_width = width*pdx
-            node.calculated_height = height*pdy
-
+            
             # initialize the calculated container
             node.calculated_container = [0,0,0,0]
 
@@ -265,6 +294,7 @@ class transform_glml:
         if ( node.hasText == False ):
             return [0,0,0,0]
 
+
         if ( node.parent != None ):
 
             # retrieve relative offset of the parent to place the text.
@@ -292,6 +322,8 @@ class transform_glml:
             text_box = self.state.text_machine.push_text(text_obj, limiting_container, True)
             return text_box
 
+    
+
     # generates the build info based on the content size box and node
     def pre_build_info(self, node, content_box):
 
@@ -301,7 +333,7 @@ class transform_glml:
         content_width = content_box[2]-content_box[0]
         content_height = content_box[3]-content_box[1]
 
-        info = build_info(content_width, content_height, [ content_box[0], content_box[1], content_box[2], content_box[3] ] )
+        info = build_info(content_width, content_height, [ content_box[0], content_box[1], content_box[2], content_box[3]] )
 
         if ( node.parent == None ):
             return info
@@ -377,7 +409,6 @@ class transform_glml:
         # generate the build info for this node
         content_info = self.pre_build_info(node, content_box) 
 
-    
         # then update the offset depending on display of the node
         self.pre_offset_map[ node.attributes["display"] ](node, content_info)
 
@@ -401,22 +432,10 @@ class transform_glml:
 
         return content_info
 
-            
-
-
-
-        
-
-        
-
-
 
 
             
 
-            
-    
 
 
 
-    

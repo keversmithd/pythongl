@@ -141,6 +141,10 @@ class state:
         self.element_machine = machine
         self.add_render(self.element_machine)
 
+    # ADD EVENT SYSTEM
+    def add_event_system(self, event_system):
+        self.event_system = event_system
+
     ## CAMERAS
     def add_camera(self, camera, name):
 

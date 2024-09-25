@@ -1,4 +1,6 @@
 
+## incomplete vitelgl has updated version of this statically built interval tree.
+
 import copy
 
 class union_event_point:
@@ -26,7 +28,6 @@ def overlap_share_endpoint(segment0,segment1):
     return False
 
 
-
 def unionize_segments(segments):
 
     union_event_points = []
@@ -35,7 +36,7 @@ def unionize_segments(segments):
         union_event_points.append(union_event_point(segment,segment[0]))
         union_event_points.append(union_event_point(segment,segments[1]))
 
-    sorted_union_event_points = sorted(union_event_points,union_event_point_compare)
+    sorted_union_event_points = sorted(union_event_points, union_event_point_compare)
 
     combined_segments = []
     combined_tail = 0

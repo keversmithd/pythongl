@@ -1,4 +1,50 @@
+# Euler vector
+
+  get euler vector representation from axis angle
+  https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
+
+  
+
 # event system
+
+  ## Key points
+
+
+    ### Scene Object
+      the scene object wraps around a pointer or self object, and interfaces are given to retrieve position, euler and quaternion.. etc
+      if any of these are not available, then idk
+
+      realistic usage:
+        scene_object ( other_object? )
+      
+    ### Data structures
+
+      event interval tree:
+
+        MODEL AFTER A QUAD TREE.
+          so the inital segment is the main segment, if a segement must be larger than this main segment then there 
+          could be some form of rebuild that might be neccecary.
+        
+
+        insert event with region:
+          moves down tree, searching sub trees of intersected segments, finds final leaf destination, if outside of the total range of the region tree, then reset tree with that new new domain  
+        
+      event hash list:
+
+        MODEL AFTER A HASHTABLE
+          # USE ARRAY OF LINKED LISTS THAT HASH OUT AS TIME SQUARES
+        
+        MODEL AFTER A SEGMENT TREE 
+          # Build tree from ground up
+          # Combine first two nodes into root
+          # If inserted is larger than root, then make new root and combine the root and inserted
+          # If inside of the root then travel down to the to the intersected leaf, then try to combine them.
+          
+    
+    ### Usage
+  
+
+    
 
 # glml transformer
   ## description:
@@ -50,8 +96,9 @@
   program:
   realistic usage
   ## Future plans
-    return index groups for mutable section or vertices of the buffer, and a region expansions algorithm to measure the regions which
-    need update.
+    not all uniforms need to be updated when only a single must be updated
+    having a reference to a value is useful so that copies are not neccecary, so there should be a way
+    to set the names of all uniforms which need updating then just update those I guess
   realistic usage
     shader_program = ShaderProgram({
       "vertex_shader" : (string or file)
@@ -142,10 +189,28 @@
 
 
 
-## DEV LOG 2 
-1st hour build element which is versatile and usable to instantiate with the ui transformer, this also involves a way to wrap and deliver the objects the scene. 
+# Frustrum UI
 
-since MVP of the inital element has a flaw of many buffer updates for its uniform there are refactors which can help, such as instancing, maybe using like a shader control to write the updates to a uniform texture which has like one draw call but still updates [save for later]
+  expand glml nodes to account for math nodes
+  or create a parser which will parse math functions
+  and return content info based on the limiting container as before
+
+  frustrum UI takes the document tree and simply renders it with respect
+  the current state of the frustrum at the time it is "rendered"p
 
 
-2nd build event object which abstracts the partitioning data structure but delivers real time collsiion results ot objects.
+
+
+  changes between transform glml and frustrum ui
+  the calculated container, a better idea would be to actually just
+  keep everything the same but project the glml node with the same view matrix and projection matrix.
+
+  future note that this module is nearly obsolete
+
+
+    
+
+# DEV LOG 3
+finish event animation system, ready to add new attributes and object types
+add frustrum ui system with LaTex parser
+

@@ -23,6 +23,7 @@ class cube_geometry:
         self.generate_geometry()
 
         return
+    
     def generate_geometry(self):
 
         self.element_buffer.allocate(24)
